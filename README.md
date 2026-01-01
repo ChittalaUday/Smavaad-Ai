@@ -154,14 +154,14 @@ PORT=5000
 CORS_URL=http://localhost:3002
 SERVER_URL=http://localhost:5000
 DB_URL=mongodb://mongod:27017
-DB_NAME=ZenChat
+DB_NAME=SAMVAAD_AI
 DB_MIN_POOL_SIZE=2
 DB_MAX_POOL_SIZE=5
 COOKIE_VALIDITY_SEC=172800
 ACCESS_TOKEN_VALIDITY_SEC=182800
 REFRESH_TOKEN_VALIDITY_SEC=604800
-TOKEN_ISSUER=api.zenchat.com
-TOKEN_AUDIENCE=zenchat.com
+TOKEN_ISSUER=api.samvaad.ai
+TOKEN_AUDIENCE=samvaad.ai
 JWT_SECRET_KEY=your-super-secret-jwt-key-here
 ```
 
@@ -239,7 +239,7 @@ services:
     depends_on:
       - mongo
     volumes:
-      - zenchatbackend_data:/app
+      - samvaad_backend_data:/app
 
   client:
     build:
@@ -257,11 +257,11 @@ services:
     volumes:
       - mongo_data:/data/db
     environment:
-      - MONGO_INITDB_DATABASE=ZenChat
+      - MONGO_INITDB_DATABASE=SAMVAAD_AI
 
 volumes:
   mongo_data:
-  zenchatbackend_data:
+  samvaad_backend_data:
 ```
 
 To deploy with Docker:

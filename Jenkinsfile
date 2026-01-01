@@ -2,8 +2,8 @@ pipeline {
   agent any
 
   environment {
-    DOCKER_IMAGE_NAME = "zenchatbackend"
-    DOCKER_CONTAINER_NAME = "zenchatbackend"
+    DOCKER_IMAGE_NAME = "samvaad_backend"
+    DOCKER_CONTAINER_NAME = "samvaad_backend"
     VERSION_COMMIT_HASH = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim() // versioning the build images
   }
 
@@ -53,21 +53,21 @@ pipeline {
     stage('creating .env file') {
       steps {
         script {
-          withCredentials([string(credentialsId: 'ZENCHAT_DB_URL', variable: 'DB_URL'), string(credentialsId: 'ZENCHAT_JWT_SECRET_KEY', variable: 'JWT_SECRET_KEY')]) {
+          withCredentials([string(credentialsId: 'SAMVAAD_DB_URL', variable: 'DB_URL'), string(credentialsId: 'SAMVAAD_JWT_SECRET_KEY', variable: 'JWT_SECRET_KEY')]) {
             def envContent = """
             NODE_ENV=development
             PORT=5000
-            CORS_URL=https://zenchat-indol.vercel.app
-            SERVER_URL=https://zenchatapi.bytenode.xyz
+            CORS_URL=https://samvaad-ai.vercel.app
+            SERVER_URL=https://api.samvaad.ai
             DB_URL=${DB_URL}
-            DB_NAME=ZenChat
+            DB_NAME=SAMVAAD_AI
             DB_MIN_POOL_SIZE=2
             DB_MAX_POOL_SIZE=5
             COOKIE_VALIDITY_SEC=172800
             ACCESS_TOKEN_VALIDITY_SEC=182800
             REFRESH_TOKEN_VALIDITY_SEC=604800
-            TOKEN_ISSUER=api.zenchat.com
-            TOKEN_AUDIENCE=zenchat.com
+            TOKEN_ISSUER=api.samvaad.ai
+            TOKEN_AUDIENCE=samvaad.ai
             JWT_SECRET_KEY=${JWT_SECRET_KEY}
             """
 

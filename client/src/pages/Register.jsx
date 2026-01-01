@@ -48,13 +48,13 @@ export default function Register() {
           <div className="text-primary">
             <BsFillChatRightTextFill />
           </div>
-          <h1 className="text-2xl font-bold dark:text-slate-200">ZenChat</h1>
+          <h1 className="text-2xl font-bold dark:text-slate-200">SAMVAAD AI</h1>
         </div>
 
         <div className="flex flex-col items-center gap-1">
           <h3 className="font-medium text-xl dark:text-slate-200">Sign Up</h3>
           <p className="text-slate-400 dark:text-slate-300">
-            Welcome to zenchat, create an account
+            Welcome to SAMVAAD AI, create an account
           </p>
         </div>
 
