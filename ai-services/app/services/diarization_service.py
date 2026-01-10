@@ -13,6 +13,8 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+hf_token = os.getenv("HUGGING_FACE_TOKEN")
+
 class DiarizationService:
     def __init__(self):
         """
@@ -22,7 +24,7 @@ class DiarizationService:
         logger.info(f"Using device: {self.device} for diarization")
 
         # It's recommended to use an environment variable for the token
-        hf_token = os.getenv("HUGGING_FACE_TOKEN", "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")
+        hf_token = os.getenv("HUGGING_FACE_TOKEN")
         if not hf_token:
             raise ValueError("Hugging Face token not found. Please set the HUGGING_FACE_TOKEN environment variable.")
 
