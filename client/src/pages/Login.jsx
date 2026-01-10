@@ -85,8 +85,6 @@ export default function Login() {
             >
               Sign Up
             </Link>
-            <br />
-            Crafted with ☕ by Ankit Kumar
           </p>
         </div>
       </div>

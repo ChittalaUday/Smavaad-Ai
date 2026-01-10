@@ -91,8 +91,6 @@ export default function Register() {
             >
               Sign In
             </Link>
-            <br />
-            Crafted with ☕ by Ankit Kumar
           </p>
         </div>
       </div>

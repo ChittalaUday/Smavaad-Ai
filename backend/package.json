@@ -16,7 +16,7 @@
     "socketiochatapp",
     "socketchat"
   ],
-  "author": "Ankit Kumar",
+  "author": "Chittala Uday",
   "license": "ISC",
   "devDependencies": {
     "@types/bcrypt": "^5.0.2",
