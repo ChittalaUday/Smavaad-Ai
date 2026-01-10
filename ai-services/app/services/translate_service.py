@@ -58,3 +58,44 @@ class TranslateService:
         except Exception as e:
             logger.error(f"Error during translation: {e}")
             raise
+
+    def transcribe(self, audio_path: str, beam_size: int = 5) -> list:
+        """
+        Transcribe audio to text with timestamps.
+
+        Args:
+            audio_path (str): Path to the audio file.
+            beam_size (int): Beam size for decoding.
+
+        Returns:
+            list: List of segments with start, end, and text.
+        """
+        if not os.path.exists(audio_path):
+            raise FileNotFoundError(f"Audio file not found: {audio_path}")
+
+        logger.info(f"Starting transcription for: {audio_path}")
+        try:
+            # task="transcribe" (default)
+            segments, info = self.model.transcribe(
+                audio_path, 
+                beam_size=beam_size, 
+                task="transcribe",
+                word_timestamps=True 
+            )
+            
+            logger.info(f"Detected language '{info.language}' with probability {info.language_probability}")
+
+            # faster-whisper returns a generator, so we must iterate
+            result_segments = []
+            for segment in segments:
+                result_segments.append({
+                    "start": segment.start,
+                    "end": segment.end,
+                    "text": segment.text.strip()
+                })
+
+            return result_segments
+
+        except Exception as e:
+            logger.error(f"Error during transcription: {e}")
+            raise

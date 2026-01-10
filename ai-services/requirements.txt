@@ -5,7 +5,11 @@ faster-whisper
 torch
 numpy<2
 torchaudio
-pyannote.audio==3.1.1
+speechbrain
+scikit-learn
 python-dotenv
 huggingface_hub
 tqdm
+pyannote.audio
+pydub
+requests
