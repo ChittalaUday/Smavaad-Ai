@@ -1,3 +1,7 @@
 /venv
 .env
 /venv_new
+/temp_audio
+diarization_error.log
+error.txt
+server.log

@@ -71,8 +71,8 @@ export default function VideoChat({ show }) {
                     <li
                       onClick={() => handleChangeAudioInput(device.deviceId)}
                       className={`text-xs w-[250px] text-left cursor-pointer my-2 ${device.deviceId === selectedInputAudioDevice
-                          ? "text-blue-700"
-                          : ""
+                        ? "text-blue-700"
+                        : ""
                         }`}
                     >
                       {device.label}
@@ -110,8 +110,8 @@ export default function VideoChat({ show }) {
                     <li
                       onClick={() => handleChangeVideoInput(device.deviceId)}
                       className={`text-xs w-[250px] text-left cursor-pointer my-2 ${device.deviceId === selectedInputVideoDevice
-                          ? "text-blue-700"
-                          : ""
+                        ? "text-blue-700"
+                        : ""
                         }`}
                     >
                       {device.label}

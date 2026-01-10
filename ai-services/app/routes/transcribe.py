@@ -58,4 +58,4 @@ async def transcribe_audio(
     finally:
         # Cleanup
         if os.path.exists(temp_file_path):
-            os.remove(temp_file_path)
+            pass # os.remove(temp_file_path)

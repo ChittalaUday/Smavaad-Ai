@@ -55,6 +55,12 @@ export default function WebRtcContextProvider({ children }) {
   const mediaRecorderRef = useRef(null);
   const recordedChunksRef = useRef([]);
 
+  // ICE candidate buffer
+  const iceCandidatesBuffer = useRef([]);
+
+  const [meetingSummaryBlob, setMeetingSummaryBlob] = useState(null);
+  const [lastEndedCallMessageId, setLastEndedCallMessageId] = useState(null);
+
   const { user } = useAuth();
   const userId = user._id;
 
@@ -264,6 +270,17 @@ export default function WebRtcContextProvider({ children }) {
         remoteVideoRef.current.srcObject = remoteStreamRef.current;
       }
 
+      // Process buffered ICE candidates
+      if (iceCandidatesBuffer.current.length > 0) {
+        console.log("Processing buffered ICE candidates:", iceCandidatesBuffer.current.length);
+        iceCandidatesBuffer.current.forEach((candidate) => {
+          peerConnectionRef.current
+            .addIceCandidate(candidate)
+            .catch((e) => console.error("Error adding buffered ice candidate", e));
+        });
+        iceCandidatesBuffer.current = [];
+      }
+
       // listen to the ice candidate from the peerConnection
       peerConnectionRef.current.addEventListener("icecandidate", (event) => {
         if (event.candidate) {
@@ -423,34 +440,44 @@ export default function WebRtcContextProvider({ children }) {
       mediaRecorderRef.current = null;
 
       // Allow a brief moment for last chunk
-      setTimeout(async () => {
+      setTimeout(() => {
         if (recordedChunksRef.current.length > 0) {
           const blob = new Blob(recordedChunksRef.current, { type: "audio/webm" });
-          // Optional: Save local copy
-          // saveAs(blob, "meeting-recording.webm");
-
-          // Upload to backend for PDF generation
-          console.log("Uploading recording for transcription...");
-          try {
-            // We need a file object for the API
-            const file = new File([blob], "meeting-recording.webm", { type: "audio/webm" });
-            const response = await generatePdf(file);
-            const pdfBlob = new Blob([response.data], { type: "application/pdf" });
-            saveAs(pdfBlob, "meeting-transcript.pdf");
-            console.log("Transcript downloaded.");
-          } catch (err) {
-            console.error("Failed to generate transcript:", err);
+          setMeetingSummaryBlob(blob);
+          if (callMessageId.current) {
+            setLastEndedCallMessageId(callMessageId.current);
           }
-
           recordedChunksRef.current = [];
         }
       }, 500);
     }
   };
 
+  const downloadMeetingSummary = async () => {
+    if (!meetingSummaryBlob) return;
+    try {
+      console.log("Uploading recording for transcription...");
+      // We need a file object for the API
+      const file = new File([meetingSummaryBlob], "meeting-recording.webm", { type: "audio/webm" });
+      const response = await generatePdf(file);
+      const pdfBlob = new Blob([response.data], { type: "application/pdf" });
+      saveAs(pdfBlob, "meeting-transcript.pdf");
+      console.log("Transcript downloaded.");
+    } catch (err) {
+      console.error("Failed to generate transcript:", err);
+    }
+  };
+
   // handle answer offer
   const handleAnswerOffer = async (offerObj) => {
-    audioRef.current.pause();
+    if (callConnectionState === "connecting" || callConnectionState === "connected") return; // Prevent double clicks
+
+    setIncomingOffer(null); // Remove incoming call UI immediately
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+
     await fetchUserMedia();
     await createPeerConnection(offerObj);
     setTargetUserId(offerObj.offererUserId); // Set target so we know where to send ICE candidates
@@ -464,11 +491,7 @@ export default function WebRtcContextProvider({ children }) {
 
     startRecording(); // Start recording
 
-    const offerIceCandidates = await socket.emitWithAck("newAnswer", offerObj);
-    offerIceCandidates?.forEach((c) => {
-      peerConnectionRef.current.addIceCandidate(c);
-      console.log("addedIceCandidate");
-    });
+    socket.emit("newAnswer", offerObj);
   };
 
   const handleAddAnswer = async (offerObj) => {
@@ -484,6 +507,9 @@ export default function WebRtcContextProvider({ children }) {
     if (peerConnectionRef.current) {
       console.log("addedIceCandidate");
       peerConnectionRef.current.addIceCandidate(iceCandidate);
+    } else {
+      console.log("buffering Ice Candidate");
+      iceCandidatesBuffer.current.push(iceCandidate);
     }
   };
 
@@ -585,6 +611,9 @@ export default function WebRtcContextProvider({ children }) {
 
         checkCallStatus,
         setCallMessageId: (id) => (callMessageId.current = id),
+        meetingSummaryBlob,
+        lastEndedCallMessageId,
+        downloadMeetingSummary,
       }}
     >
       <audio ref={audioRef} src={ringtone} loop></audio>

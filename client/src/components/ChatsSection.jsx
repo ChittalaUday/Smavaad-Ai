@@ -37,7 +37,7 @@ const MessageCont = ({ isOwnMessage, isGroupChat, message }) => {
     setIsOpenView(true);
   };
 
-  const { handleCall, setTargetUserId, checkCallStatus, setCallMessageId } =
+  const { handleCall, setTargetUserId, checkCallStatus, setCallMessageId, meetingSummaryBlob, lastEndedCallMessageId, downloadMeetingSummary } =
     useConnectWebRtc();
 
   const handleJoinCall = () => {
@@ -72,6 +72,15 @@ const MessageCont = ({ isOwnMessage, isGroupChat, message }) => {
               className="bg-green-500 text-white px-3 py-1 rounded-md mb-2 text-sm hover:bg-green-600 w-full"
             >
               Join Call
+            </button>
+          )}
+
+          {message._id === lastEndedCallMessageId && meetingSummaryBlob && (
+            <button
+              onClick={downloadMeetingSummary}
+              className="bg-blue-500 text-white px-3 py-1 rounded-md mb-2 text-sm hover:bg-blue-600 w-full flex items-center justify-center gap-2"
+            >
+              <PiDownloadSimpleBold className="text-lg" /> Download Transcript
             </button>
           )}
           {message.attachments?.length ? (
