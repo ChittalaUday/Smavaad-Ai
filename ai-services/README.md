@@ -2,6 +2,14 @@
 
 This service provides speech-to-text transcription, translation, and speaker diarization capabilities using `faster-whisper` and `pyannote.audio`.
 
+## Automated Meeting Transcription
+
+The frontend application (`client`) is configured to **automatically record** video calls. 
+*   **Start**: Recording starts when a user initiates a call or answers an incoming call.
+*   **Processing**: The audio (local + remote mix) is captured in the browser.
+*   **End**: When the call is hung up, the captured audio is automatically sent to the backend.
+*   **Result**: The backend forwards the audio to this AI service, generates a diarized transcript, and the PDF is automatically downloaded in the browser as `meeting-transcript.pdf`.
+
 ## Prerequisites
 
 *   **Python 3.10+** (Python 3.10 is recommended for stability with `pyannote.audio` and `torch`).

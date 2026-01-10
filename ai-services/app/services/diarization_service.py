@@ -98,6 +98,11 @@ class DiarizationService:
 
         except Exception as e:
             logger.error(f"Error during diarization: {e}")
+            with open("diarization_error.log", "a") as f:
+                f.write(f"Error: {e}\n")
+                import traceback
+                f.write(traceback.format_exc())
+                f.write("\n")
             raise
         finally:
             # Clean up the temporary file

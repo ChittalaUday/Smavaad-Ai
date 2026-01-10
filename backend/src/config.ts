@@ -4,6 +4,7 @@ dotenv.config();
 export const environment = process.env.NODE_ENV;
 export const port = process.env.PORT;
 export const serverUrl = process.env.SERVER_URL?.trim();
+export const aiServiceUrl = process.env.AI_SERVICE_URL || "http://127.0.0.1:8000/api";
 
 export const db = {
   name: process.env.DB_NAME || "",

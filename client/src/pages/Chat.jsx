@@ -9,6 +9,7 @@ import { useChat } from "../context/ChatContext";
 import VideoChat from "../components/VideoChat";
 import { useConnectWebRtc } from "../context/WebRtcContext";
 import IncomingCall from "../components/IncomingCall";
+import AudioPdfSection from "../components/AudioPdfSection";
 
 export default function Chat() {
   const {
@@ -38,24 +39,30 @@ export default function Chat() {
               activeLeftSidebar={activeLeftSidebar}
             />
           </div>
-          <div>
-            <ChatLeftSidebar activeLeftSidebar={activeLeftSidebar} />
-          </div>
-          <div
-            className={`w-full md:${
-              isChatSelected && activeLeftSidebar === "recentChats"
-                ? ""
-                : "hidden"
-            }`}
-          >
-            {currentSelectedChat.current?._id ? (
-              <ChatsSection />
-            ) : (
-              <div className="h-full w-full flex items-center justify-center text-2xl text-slate-500">
-                <h1>No chat selected</h1>
+
+          {activeLeftSidebar === "audioPdf" ? (
+            <AudioPdfSection />
+          ) : (
+            <>
+              <div>
+                <ChatLeftSidebar activeLeftSidebar={activeLeftSidebar} />
               </div>
-            )}
-          </div>
+              <div
+                className={`w-full md:${isChatSelected && activeLeftSidebar === "recentChats"
+                  ? ""
+                  : "hidden"
+                  }`}
+              >
+                {currentSelectedChat.current?._id ? (
+                  <ChatsSection />
+                ) : (
+                  <div className="h-full w-full flex items-center justify-center text-2xl text-slate-500">
+                    <h1>No chat selected</h1>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
         </div>
       </div>
       <div className="hidden md:block ">

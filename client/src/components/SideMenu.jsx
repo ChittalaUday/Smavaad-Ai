@@ -1,5 +1,6 @@
 import React from "react";
 import { LuUser, PiChats, RiUserSearchLine, logo, profile } from "../assets";
+import { FaFilePdf } from "react-icons/fa";
 import Avatar from "react-avatar";
 import ThemeSwitchButton from "../components/ThemeSwitchButton";
 import { useAuth } from "../context/AuthContext";
@@ -8,6 +9,7 @@ export default function SideMenu({ activeLeftSidebar, setActiveLeftSidebar }) {
     { Icon: LuUser, name: "profile" },
     { Icon: PiChats, name: "recentChats" },
     { Icon: RiUserSearchLine, name: "searchUser" },
+    { Icon: FaFilePdf, name: "audioPdf" },
   ];
 
   const { logout, user } = useAuth();

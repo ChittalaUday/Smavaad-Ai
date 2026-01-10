@@ -91,4 +91,13 @@ export const updateMessage = (messageId, content) => {
   return apiClient.put(`api/messages/${messageId}`, { content });
 };
 
+// generate pdf
+export const generatePdf = (file) => {
+  const formData = new FormData();
+  formData.append("audio", file);
+  return apiClient.post("/api/pdf/generate", formData, {
+    responseType: "blob",
+  });
+};
+
 export default apiClient;

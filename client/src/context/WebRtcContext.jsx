@@ -5,6 +5,8 @@ import { useAuth } from "./AuthContext";
 import { useChat } from "./ChatContext";
 import { ringtone } from "../assets";
 import { LocalStorage } from "../utils";
+import { generatePdf } from "../api";
+import { saveAs } from "file-saver";
 
 const webRtcContext = createContext(null);
 
@@ -36,6 +38,7 @@ export default function WebRtcContextProvider({ children }) {
   const [selectedInputVideoDevice, setSelectedInputVideoDevice] = useState();
   const [selectedInputAudioDevice, setSelectedInputAudioDevice] = useState();
 
+
   // refs for webRtcContext
   const didIOffer = useRef(false); // current offer made by
   const cameraFace = useRef("user"); // ref for camera face two options ("user", "environment")
@@ -47,6 +50,10 @@ export default function WebRtcContextProvider({ children }) {
   const audioRef = useRef(); // reference to the incoming audio ringtone
   const callMessageId = useRef(null); // ref to store the messageId of the call start message
   const callStartTime = useRef(null); // ref to store the start time of the call
+
+  // Recording refs
+  const mediaRecorderRef = useRef(null);
+  const recordedChunksRef = useRef([]);
 
   const { user } = useAuth();
   const userId = user._id;
@@ -108,7 +115,6 @@ export default function WebRtcContextProvider({ children }) {
         localVideoRef.current.muted = true; // mute the audio feed to the local user
       }
 
-      // get current selected video device id
       if (localStreamRef.current) {
         const currentVideoDeviceId = localStreamRef.current
           ?.getVideoTracks()[0]
@@ -125,6 +131,51 @@ export default function WebRtcContextProvider({ children }) {
       }
     } catch (error) {
       console.log("Error while fetching userMedia..." + error);
+    }
+  };
+
+  const startRecording = () => {
+    if (localStreamRef.current && MediaRecorder.isTypeSupported("audio/webm")) {
+      console.log("Starting recording...");
+      recordedChunksRef.current = [];
+      // Combine local stream (audio only for now, can be mixed later if needed)
+      // Ideally we want both sides. For p2p, we only have local stream directly or need to mix with remote.
+      // Easiest is to record local microphone. To record full conversation in browser is harder without mixing.
+      // But user said "store audio even the meeting starts", assuming full conversation.
+      // WebAudio API allows mixing local and remote streams.
+
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      const destination = audioContext.createMediaStreamDestination();
+
+      if (localStreamRef.current.getAudioTracks().length > 0) {
+        const localSource = audioContext.createMediaStreamSource(localStreamRef.current);
+        localSource.connect(destination);
+      }
+
+      if (remoteStreamRef.current && remoteStreamRef.current.getAudioTracks().length > 0) {
+        const remoteSource = audioContext.createMediaStreamSource(remoteStreamRef.current);
+        remoteSource.connect(destination);
+      }
+
+      // Use the mixed stream if possible, else falls back to local
+      const streamToRecord = destination.stream.getAudioTracks().length > 0 ? destination.stream : localStreamRef.current;
+
+      try {
+        const mediaRecorder = new MediaRecorder(streamToRecord, { mimeType: "audio/webm" });
+        mediaRecorderRef.current = mediaRecorder;
+
+        mediaRecorder.ondataavailable = (event) => {
+          if (event.data.size > 0) {
+            recordedChunksRef.current.push(event.data);
+          }
+        };
+
+        mediaRecorder.start(1000); // Collect chunks every second
+      } catch (e) {
+        console.error("Failed to create MediaRecorder:", e);
+      }
+    } else {
+      console.warn("MediaRecorder not supported or missing permissions.");
     }
   };
 
@@ -289,6 +340,7 @@ export default function WebRtcContextProvider({ children }) {
 
     await fetchUserMedia();
     await createPeerConnection();
+    startRecording(); // Start recording
     try {
       const newOffer = await peerConnectionRef.current.createOffer();
       peerConnectionRef.current.setLocalDescription(newOffer);
@@ -364,6 +416,36 @@ export default function WebRtcContextProvider({ children }) {
       callStartTime.current = null;
       callMessageId.current = null;
     }
+
+    // Stop recording and process
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+      mediaRecorderRef.current.stop();
+      mediaRecorderRef.current = null;
+
+      // Allow a brief moment for last chunk
+      setTimeout(async () => {
+        if (recordedChunksRef.current.length > 0) {
+          const blob = new Blob(recordedChunksRef.current, { type: "audio/webm" });
+          // Optional: Save local copy
+          // saveAs(blob, "meeting-recording.webm");
+
+          // Upload to backend for PDF generation
+          console.log("Uploading recording for transcription...");
+          try {
+            // We need a file object for the API
+            const file = new File([blob], "meeting-recording.webm", { type: "audio/webm" });
+            const response = await generatePdf(file);
+            const pdfBlob = new Blob([response.data], { type: "application/pdf" });
+            saveAs(pdfBlob, "meeting-transcript.pdf");
+            console.log("Transcript downloaded.");
+          } catch (err) {
+            console.error("Failed to generate transcript:", err);
+          }
+
+          recordedChunksRef.current = [];
+        }
+      }, 500);
+    }
   };
 
   // handle answer offer
@@ -379,6 +461,8 @@ export default function WebRtcContextProvider({ children }) {
     await peerConnectionRef.current.setLocalDescription(answerOffer); // set local description
     console.log("created an answer offer");
     offerObj.answer = answerOffer; // set answer offer to offerObj
+
+    startRecording(); // Start recording
 
     const offerIceCandidates = await socket.emitWithAck("newAnswer", offerObj);
     offerIceCandidates?.forEach((c) => {
@@ -498,11 +582,7 @@ export default function WebRtcContextProvider({ children }) {
         selectedInputAudioDevice,
         changeVideoInputDevice,
         changeAudioInputDevice,
-        inputAudioDevices,
-        selectedInputVideoDevice,
-        selectedInputAudioDevice,
-        changeVideoInputDevice,
-        changeAudioInputDevice,
+
         checkCallStatus,
         setCallMessageId: (id) => (callMessageId.current = id),
       }}

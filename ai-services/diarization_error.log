@@ -1,0 +1,46 @@
+Error: Decoding failed. ffmpeg returned error code: 3199971767
+
+Output from ffmpeg/avlib:
+
+ffmpeg version 8.0.1-essentials_build-www.gyan.dev Copyright (c) 2000-2025 the FFmpeg developers
+  built with gcc 15.2.0 (Rev8, Built by MSYS2 project)
+  configuration: --enable-gpl --enable-version3 --enable-static --disable-w32threads --disable-autodetect --enable-fontconfig --enable-iconv --enable-gnutls --enable-libxml2 --enable-gmp --enable-bzlib --enable-lzma --enable-zlib --enable-libsrt --enable-libssh --enable-libzmq --enable-avisynth --enable-sdl2 --enable-libwebp --enable-libx264 --enable-libx265 --enable-libxvid --enable-libaom --enable-libopenjpeg --enable-libvpx --enable-mediafoundation --enable-libass --enable-libfreetype --enable-libfribidi --enable-libharfbuzz --enable-libvidstab --enable-libvmaf --enable-libzimg --enable-amf --enable-cuda-llvm --enable-cuvid --enable-dxva2 --enable-d3d11va --enable-d3d12va --enable-ffnvcodec --enable-libvpl --enable-nvdec --enable-nvenc --enable-vaapi --enable-openal --enable-libgme --enable-libopenmpt --enable-libopencore-amrwb --enable-libmp3lame --enable-libtheora --enable-libvo-amrwbenc --enable-libgsm --enable-libopencore-amrnb --enable-libopus --enable-libspeex --enable-libvorbis --enable-librubberband
+  libavutil      60.  8.100 / 60.  8.100
+  libavcodec     62. 11.100 / 62. 11.100
+  libavformat    62.  3.100 / 62.  3.100
+  libavdevice    62.  1.100 / 62.  1.100
+  libavfilter    11.  4.100 / 11.  4.100
+  libswscale      9.  1.100 /  9.  1.100
+  libswresample   6.  1.100 /  6.  1.100
+[matroska,webm @ 00000296a1c24700] Format matroska,webm detected only with low score of 1, misdetection possible!
+[matroska,webm @ 00000296a1c24700] EBML header parsing failed
+[in#0 @ 00000296a1c24480] Error opening input: Invalid data found when processing input
+Error opening input file temp_audio\5a480377-2111-4a06-8573-3670a9fb425b.webm.
+Error opening input files: Invalid data found when processing input
+
+Traceback (most recent call last):
+  File "D:\Projects\Git clone Projects\SAMVAAD AI\ai-services\app\services\diarization_service.py", line 59, in diarize
+    audio = AudioSegment.from_file(audio_path)
+  File "D:\Projects\Git clone Projects\SAMVAAD AI\ai-services\venv_new\lib\site-packages\pydub\audio_segment.py", line 773, in from_file
+    raise CouldntDecodeError(
+pydub.exceptions.CouldntDecodeError: Decoding failed. ffmpeg returned error code: 3199971767
+
+Output from ffmpeg/avlib:
+
+ffmpeg version 8.0.1-essentials_build-www.gyan.dev Copyright (c) 2000-2025 the FFmpeg developers
+  built with gcc 15.2.0 (Rev8, Built by MSYS2 project)
+  configuration: --enable-gpl --enable-version3 --enable-static --disable-w32threads --disable-autodetect --enable-fontconfig --enable-iconv --enable-gnutls --enable-libxml2 --enable-gmp --enable-bzlib --enable-lzma --enable-zlib --enable-libsrt --enable-libssh --enable-libzmq --enable-avisynth --enable-sdl2 --enable-libwebp --enable-libx264 --enable-libx265 --enable-libxvid --enable-libaom --enable-libopenjpeg --enable-libvpx --enable-mediafoundation --enable-libass --enable-libfreetype --enable-libfribidi --enable-libharfbuzz --enable-libvidstab --enable-libvmaf --enable-libzimg --enable-amf --enable-cuda-llvm --enable-cuvid --enable-dxva2 --enable-d3d11va --enable-d3d12va --enable-ffnvcodec --enable-libvpl --enable-nvdec --enable-nvenc --enable-vaapi --enable-openal --enable-libgme --enable-libopenmpt --enable-libopencore-amrwb --enable-libmp3lame --enable-libtheora --enable-libvo-amrwbenc --enable-libgsm --enable-libopencore-amrnb --enable-libopus --enable-libspeex --enable-libvorbis --enable-librubberband
+  libavutil      60.  8.100 / 60.  8.100
+  libavcodec     62. 11.100 / 62. 11.100
+  libavformat    62.  3.100 / 62.  3.100
+  libavdevice    62.  1.100 / 62.  1.100
+  libavfilter    11.  4.100 / 11.  4.100
+  libswscale      9.  1.100 /  9.  1.100
+  libswresample   6.  1.100 /  6.  1.100
+[matroska,webm @ 00000296a1c24700] Format matroska,webm detected only with low score of 1, misdetection possible!
+[matroska,webm @ 00000296a1c24700] EBML header parsing failed
+[in#0 @ 00000296a1c24480] Error opening input: Invalid data found when processing input
+Error opening input file temp_audio\5a480377-2111-4a06-8573-3670a9fb425b.webm.
+Error opening input files: Invalid data found when processing input
+
+
