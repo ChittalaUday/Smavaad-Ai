@@ -15,6 +15,7 @@ import {
   PiDownloadSimpleBold,
   RxCross2,
 } from "../assets";
+import { BsMagic } from "react-icons/bs";
 import { useChat } from "../context/ChatContext";
 import { useAuth } from "../context/AuthContext";
 import moment from "moment";
@@ -24,6 +25,7 @@ import OutsideClickHandler from "react-outside-click-handler";
 import { useConnectWebRtc } from "../context/WebRtcContext";
 import ViewImage from "./ViewImage";
 import Avatar from "react-avatar";
+import { summarizeChat } from "../api";
 
 const MessageCont = ({ isOwnMessage, isGroupChat, message }) => {
   const { deleteChatMessage } = useChat();
@@ -214,6 +216,44 @@ const MessageCont = ({ isOwnMessage, isGroupChat, message }) => {
   );
 };
 
+const SummaryModal = ({ isOpen, onClose, summary, isLoading }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-lg w-full m-4 shadow-xl">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold dark:text-white flex items-center gap-2">
+            <BsMagic /> Chat Summary
+          </h2>
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+            <RxCross2 className="text-2xl" />
+          </button>
+        </div>
+        <div className="dark:text-gray-300 max-h-[60vh] overflow-y-auto">
+          {isLoading ? (
+            <div className="flex justify-center items-center py-8">
+              <Loading />
+            </div>
+          ) : (
+            <p className="whitespace-pre-wrap leading-relaxed">
+              {summary}
+            </p>
+          )}
+        </div>
+        <div className="mt-6 flex justify-end">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default function ChatsSection() {
   const {
     messages,
@@ -229,6 +269,9 @@ export default function ChatsSection() {
     setIsChatSelected,
   } = useChat();
   const { user } = useAuth();
+  const [showSummary, setShowSummary] = useState(false);
+  const [summaryLoading, setSummaryLoading] = useState(false);
+  const [summaryContent, setSummaryContent] = useState("");
 
   const opponentParticipant = getOpponentParticipant(
     currentSelectedChat.current?.participants,
@@ -259,6 +302,20 @@ export default function ChatsSection() {
     }
   };
 
+  const handleSummarize = async () => {
+    setShowSummary(true);
+    setSummaryLoading(true);
+    try {
+      const res = await summarizeChat(currentSelectedChat.current._id);
+      setSummaryContent(res.data.data.summary);
+    } catch (error) {
+      console.error("Failed to summarize chat:", error);
+      setSummaryContent("Failed to generate summary. Please try again.");
+    } finally {
+      setSummaryLoading(false);
+    }
+  };
+
   // handle call only if the target user id is available
   useEffect(() => {
     if (targetUserId) {
@@ -272,6 +329,12 @@ export default function ChatsSection() {
 
   return (
     <div className="overflow-y-hidden">
+      <SummaryModal
+        isOpen={showSummary}
+        onClose={() => setShowSummary(false)}
+        summary={summaryContent}
+        isLoading={summaryLoading}
+      />
       <div className="flex w-full items-center justify-between p-5 md:p-4 shadow-md md:shadow-xl ">
         <div className="flex gap-3 items-center ">
           <div onClick={() => setIsChatSelected(false)}>
@@ -325,6 +388,9 @@ export default function ChatsSection() {
         </div>
 
         <div className="text-xl flex gap-5 text-slate-800 dark:text-slate-100 ">
+          <div className="cursor-pointer" title="Summarize Chat" onClick={handleSummarize}>
+            <BsMagic />
+          </div>
           <div className="cursor-pointer">
             <BiSearch />
           </div>

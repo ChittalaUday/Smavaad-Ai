@@ -13,3 +13,4 @@ tqdm
 pyannote.audio
 pydub
 requests
+Ollama

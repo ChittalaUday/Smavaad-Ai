@@ -9,6 +9,7 @@ import { useChat } from "../context/ChatContext";
 import VideoChat from "../components/VideoChat";
 import { useConnectWebRtc } from "../context/WebRtcContext";
 import IncomingCall from "../components/IncomingCall";
+import AIChat from "./AIChat";
 import AudioPdfSection from "../components/AudioPdfSection";
 
 export default function Chat() {
@@ -42,6 +43,10 @@ export default function Chat() {
 
           {activeLeftSidebar === "audioPdf" ? (
             <AudioPdfSection />
+          ) : activeLeftSidebar === "aiChat" ? (
+            <div className="w-full h-full">
+              <AIChat />
+            </div>
           ) : (
             <>
               <div>

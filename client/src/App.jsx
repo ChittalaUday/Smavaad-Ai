@@ -1,6 +1,7 @@
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Chat from "./pages/Chat";
+import AIChat from "./pages/AIChat";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { ChatProvider } from "./context/ChatContext";
@@ -60,8 +61,16 @@ function App() {
             </PrivateRoute>
           }
         />
-      </Routes>
-    </div>
+      <Route
+        path="/ai-chat"
+        element={
+          <PrivateRoute>
+            <AIChat />
+          </PrivateRoute>
+        }
+      />
+    </Routes>
+    </div >
   );
 }
 

@@ -17,7 +17,7 @@ apiClient.interceptors.request.use(
     config.headers.Authorization = `Bearer ${token}`;
     return config;
   },
-  (err) => Promise.reject(err)
+  (err) => Promise.reject(err),
 );
 
 export const loginUser = (data) => {
@@ -98,6 +98,71 @@ export const generatePdf = (file) => {
   return apiClient.post("/api/pdf/generate", formData, {
     responseType: "blob",
   });
+};
+
+// get AI chat history
+export const getAIChatHistory = () => {
+  return apiClient.get("api/chat/ai");
+};
+
+// summarize chat
+export const summarizeChat = (chatId) => {
+  return apiClient.post(`api/chat/ai/summarize/${chatId}`);
+};
+
+// stream chat with AI
+export const streamChatWithAI = async (
+  message,
+  onChunk,
+  onComplete,
+  onError,
+) => {
+  try {
+    const token = LocalStorage.get("token");
+    const response = await fetch(
+      `${import.meta.env.VITE_SERVER_URL}api/chat/ai`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ message }),
+      },
+    );
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder("utf-8");
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      const chunk = decoder.decode(value, { stream: true });
+      const lines = chunk.split("\n");
+
+      for (const line of lines) {
+        if (line.trim() !== "") {
+          try {
+            const parsed = JSON.parse(line);
+            if (parsed.content) {
+              onChunk(parsed.content);
+            }
+          } catch (e) {
+            console.error("Error parsing chunk:", e);
+          }
+        }
+      }
+    }
+
+    if (onComplete) onComplete();
+  } catch (error) {
+    if (onError) onError(error);
+  }
 };
 
 export default apiClient;

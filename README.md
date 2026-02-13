@@ -3,6 +3,7 @@
 SAMVAAD AI is a comprehensive chat application with AI-powered audio transcription capabilities. The platform enables real-time messaging with advanced speech-to-text features, speaker diarization, and voice conversation analysis.
 
 ## Table of Contents
+
 - [Features](#features)
 - [Project Structure](#project-structure)
 - [Prerequisites](#prerequisites)
@@ -15,6 +16,7 @@ SAMVAAD AI is a comprehensive chat application with AI-powered audio transcripti
 - [Contributing](#contributing)
 
 ## Features
+
 - Real-time chat with WebSocket support
 - Audio transcription using Whisper ASR
 - Speaker diarization to identify different speakers
@@ -24,6 +26,7 @@ SAMVAAD AI is a comprehensive chat application with AI-powered audio transcripti
 - Responsive UI with dark/light theme support
 
 ## Project Structure
+
 ```
 SAMVAAD AI/
 ├── ai-services/          # Python FastAPI service for audio processing
@@ -42,6 +45,129 @@ SAMVAAD AI/
     └── package.json
 ```
 
+## Class Diagram
+
+````mermaid
+classDiagram
+    direction LR
+    class User {
+        +_id: ObjectId
+        +username: string
+        +email: string
+        +password: string
+        +avatarUrl: string
+        +bio: string
+        +status: boolean
+        +roles: Role[]
+        +createdAt: Date
+        +updatedAt: Date
+    }
+
+    class Chat {
+        +_id: ObjectId
+        +name: string
+        +isGroupChat: boolean
+        +lastMessage: Message
+        +participants: User[]
+        +admin: User
+        +createdAt: Date
+        +updatedAt: Date
+    }
+
+    class Message {
+        +_id: ObjectId
+        +sender: User
+        +content: string
+        +attachments: Attachment[]
+        +chat: Chat
+        +createdAt: Date
+        +updatedAt: Date
+    }
+
+    class Role {
+        +_id: ObjectId
+        +code: string
+        +status: boolean
+        +createdAt: Date
+        +updatedAt: Date
+    }
+
+    class Attachment {
+       +url: string
+       +localPath: string
+    }
+
+    class ChatController {
+        +searchAvailableusers()
+        +createOrGetExistingChat()
+        +getCurrentUserChats()
+        +createGroupChat()
+        +getGroupChatDetails()
+        +addNewUserToGroup()
+        +deleteChat()
+    }
+
+    class MessageController {
+        +sendMessage()
+        +getAllMessages()
+        +updateMessage()
+        +deleteMessage()
+    }
+
+    class SocketServer {
+        +mountJoinChatEvent()
+        +mountStartTypingEvent()
+        +mountStopTypingEvent()
+        +mountSignalingEvents()
+    }
+
+    class AIService {
+        +transcribeAudio(filePath)
+    }
+
+    class PDFService {
+        +generateTranscriptPDF(segments)
+    }
+
+    class DiarizationService {
+        +diarize(audioPath)
+    }
+
+    class TranscriptionService {
+        +transcribe(audioPath, segments)
+    }
+
+    class TranslateService {
+        +translate(audioPath)
+        +transcribe(audioPath)
+    }
+
+    class ClientApp {
+        +renderUI()
+    }
+
+    ClientApp --> ChatController : API Calls
+    ClientApp --> MessageController : API Calls
+    ClientApp --> SocketServer : WebSocket
+    ChatController ..> User : manages
+    ChatController ..> Chat : manages
+    MessageController ..> Message : manages
+    MessageController ..> AIService : uses
+    MessageController ..> PDFService : uses
+    AIService ..> DiarizationService : calls (HTTP)
+    AIService ..> TranscriptionService : calls (HTTP)
+    AIService ..> TranslateService : calls (HTTP)
+
+    User "1" --> "*" Message : sends
+    User "*" --> "*" Chat : participates
+    Chat "1" --> "*" Message : contains
+    Chat "1" --> "0..1" Message : latestMessage
+    User "1" --> "*" Role : has
+    Message "1" --> "1" User : sender
+    Chat "1" --> "1" User : admin
+    Message *-- Attachment
+```
+
 ## Prerequisites
 - Node.js (v16 or higher)
 - npm or yarn
@@ -55,13 +181,15 @@ SAMVAAD AI/
 1. Navigate to the backend directory:
    ```bash
    cd backend
-   ```
+````
+
 2. Install dependencies:
    ```bash
    npm install
    ```
 
 ### Client Setup
+
 1. Navigate to the client directory:
    ```bash
    cd client
@@ -72,6 +200,7 @@ SAMVAAD AI/
    ```
 
 ### AI Services Setup
+
 1. Navigate to the ai-services directory:
    ```bash
    cd ai-services
@@ -89,6 +218,7 @@ SAMVAAD AI/
 ## Configuration
 
 ### Backend Configuration
+
 1. Copy `.env.sample` to `.env` in the backend directory
 2. Update the following variables:
    - `DB_URL`: MongoDB connection string
@@ -97,12 +227,14 @@ SAMVAAD AI/
    - `CORS_URL`: Frontend URL for CORS (default: http://localhost:3002)
 
 ### Client Configuration
+
 1. Copy `.env.sample` to `.env` in the client directory
 2. Update the following variables:
    - `VITE_SERVER_URL`: Backend server URL (default: http://localhost:5000)
    - `VITE_SOCKET_URI`: Socket server URL (default: http://localhost:5000)
 
 ### AI Services Configuration
+
 1. Create `.env` file in the ai-services directory (or copy from template if available)
 2. Set up required environment variables for the AI services
 
@@ -111,21 +243,26 @@ SAMVAAD AI/
 ### Method 1: Manual Start (Development)
 
 1. **Start MongoDB**
+
    - If using local MongoDB, ensure the MongoDB service is running
    - If using MongoDB Atlas, ensure your connection string is correct in the backend `.env`
 
 2. **Start the backend server**:
+
    ```bash
    cd backend
    npm run dev
    ```
+
    The backend will start on `http://localhost:5000`
 
 3. **Start the frontend**:
+
    ```bash
    cd client
    npm run dev
    ```
+
    The frontend will start on `http://localhost:3002`
 
 4. **Start the AI services**:
@@ -148,6 +285,7 @@ SAMVAAD AI/
 ### Environment Variables
 
 #### Backend (.env)
+
 ```env
 NODE_ENV=development
 PORT=5000
@@ -166,6 +304,7 @@ JWT_SECRET_KEY=your-super-secret-jwt-key-here
 ```
 
 #### Client (.env)
+
 ```env
 VITE_SERVER_URL=http://localhost:5000/
 VITE_SOCKET_URI=http://localhost:5000
@@ -175,6 +314,7 @@ VITE_SIGNALLING_SERVER_URL=https://signallingserver.bytenode.xyz/
 ## API Endpoints
 
 ### Backend API
+
 - `GET /health` - Health check endpoint
 - `POST /auth/register` - User registration
 - `POST /auth/login` - User login
@@ -187,12 +327,14 @@ VITE_SIGNALLING_SERVER_URL=https://signallingserver.bytenode.xyz/
 - `POST /api/messages` - Send a message
 
 ### AI Services API
+
 - `GET /` - Health check
 - `POST /api/transcribe` - Transcribe audio file with speaker diarization
 
 ## Technologies Used
 
 ### Backend
+
 - Node.js
 - TypeScript
 - Express.js
@@ -202,6 +344,7 @@ VITE_SIGNALLING_SERVER_URL=https://signallingserver.bytenode.xyz/
 - BCrypt for password hashing
 
 ### Frontend
+
 - React.js
 - Vite (bundler)
 - Tailwind CSS
@@ -209,6 +352,7 @@ VITE_SIGNALLING_SERVER_URL=https://signallingserver.bytenode.xyz/
 - React Router DOM
 
 ### AI Services
+
 - Python
 - FastAPI
 - PyTorch
@@ -217,6 +361,7 @@ VITE_SIGNALLING_SERVER_URL=https://signallingserver.bytenode.xyz/
 - Pyannote.audio
 
 ### Other Tools
+
 - Docker & Docker Compose
 - Nodemon (development)
 - ESLint
@@ -265,14 +410,15 @@ volumes:
 ```
 
 To deploy with Docker:
+
 1. Ensure all environment files are configured properly
 2. Run `docker-compose up --build` from the project root
 
 ## Contributing
+
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
 3. Make your changes
 4. Commit your changes (`git commit -m 'Add some amazing feature'`)
 5. Push to the branch (`git push origin feature/amazing-feature`)
 6. Open a Pull Request
-

@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from app.routes.transcribe import router as transcribe_router
 from app.routes.translate import router as translate_router
 from app.routes.diarize_transcribe import router as diarize_transcribe_router
+from app.routes.chat import router as chat_router
 
 from dotenv import load_dotenv
 import os
@@ -15,6 +16,7 @@ app = FastAPI(
 app.include_router(transcribe_router, prefix="/api")
 app.include_router(translate_router, prefix="/api")
 app.include_router(diarize_transcribe_router, prefix="/api")
+app.include_router(chat_router, prefix="/api")
 
 @app.get("/")
 def health():
