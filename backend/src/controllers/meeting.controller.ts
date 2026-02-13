@@ -4,11 +4,17 @@ import meetingRepo from "../database/repositories/meetingRepo";
 import {
   BadRequestError,
   ForbiddenError,
+  InternalError,
   NotFoundError,
 } from "../core/ApiError";
 import { SuccessResponse } from "../core/ApiResponse";
 import { ProtectedRequest } from "../types/app-request";
 import crypto from "crypto";
+import { serverUrl } from "../config";
+import { AIService } from "../services/ai.service";
+import { PDFService } from "../services/pdf.service";
+import path from "path";
+import fs from "fs";
 
 // Helper to generate a meeting ID (e.g., "abc-def-ghi")
 const generateMeetingId = (): string => {
@@ -105,9 +111,379 @@ const endMeeting = asyncHandler(
   },
 );
 
+const saveTranscript = asyncHandler(
+  async (req: ProtectedRequest, res: Response) => {
+    const { meetingId } = req.params;
+    const { transcript } = req.body;
+
+    if (!transcript || typeof transcript !== "string") {
+      throw new BadRequestError("Transcript is required");
+    }
+
+    const meeting = await meetingRepo.findByMeetingId(meetingId);
+    if (!meeting) {
+      throw new NotFoundError("Meeting not found");
+    }
+
+    const updatedMeeting = await meetingRepo.saveTranscript(
+      meetingId,
+      transcript,
+    );
+
+    // Auto-summarize in background after saving transcript
+    try {
+      const detailedMeeting =
+        await meetingRepo.findByMeetingIdDetailed(meetingId);
+      if (detailedMeeting) {
+        let combinedText = transcript;
+        if (detailedMeeting.messages && detailedMeeting.messages.length > 0) {
+          const chatTranscript = detailedMeeting.messages
+            .map(
+              (msg: any) => `${msg.sender?.username || "Unknown"}: ${msg.text}`,
+            )
+            .join("\n");
+          combinedText = `Audio Transcript:\n${transcript}\n\nChat Messages:\n${chatTranscript}`;
+        }
+
+        const summaryData = await AIService.summarizeCall(combinedText);
+        if (summaryData.summary) {
+          await meetingRepo.saveSummary(
+            meetingId,
+            summaryData.summary,
+            summaryData.action_items,
+          );
+
+          if (summaryData.pdf_report) {
+            const pdfDir = path.join(__dirname, "..", "..", "public", "pdf");
+            if (!fs.existsSync(pdfDir)) {
+              fs.mkdirSync(pdfDir, { recursive: true });
+            }
+            const pdfFilename = `summary-${meetingId}-${Date.now()}.pdf`;
+            const pdfFilePath = path.join(pdfDir, pdfFilename);
+            fs.writeFileSync(
+              pdfFilePath,
+              Buffer.from(summaryData.pdf_report, "base64") as any,
+            );
+            const pdfUrl = `${serverUrl}/public/pdf/${pdfFilename}`;
+            await meetingRepo.savePdf(meetingId, pdfUrl);
+          }
+        }
+      }
+    } catch (err) {
+      console.error("Auto-summarization failed:", err);
+    }
+
+    return new SuccessResponse(
+      "Transcript saved and summarization triggered",
+      updatedMeeting,
+    ).send(res);
+  },
+);
+
+const summarizeMeeting = asyncHandler(
+  async (req: ProtectedRequest, res: Response) => {
+    const { meetingId } = req.params;
+
+    const meeting = await meetingRepo.findByMeetingIdDetailed(meetingId);
+    if (!meeting) {
+      throw new NotFoundError("Meeting not found");
+    }
+
+    let combinedText = "";
+    if (meeting.transcript) {
+      combinedText += `Audio Transcript:\n${meeting.transcript}\n\n`;
+    }
+
+    if (meeting.messages && meeting.messages.length > 0) {
+      const chatTranscript = meeting.messages
+        .map((msg: any) => `${msg.sender?.username || "Unknown"}: ${msg.text}`)
+        .join("\n");
+      combinedText += `Chat Messages:\n${chatTranscript}`;
+    }
+
+    if (!combinedText || combinedText.trim().length < 10) {
+      throw new BadRequestError("No transcript or messages to summarize");
+    }
+
+    const summaryData = await AIService.summarizeCall(combinedText);
+
+    // Save summary and action items
+    const updatedMeeting = await meetingRepo.saveSummary(
+      meetingId,
+      summaryData.summary,
+      summaryData.action_items,
+    );
+
+    // Save PDF if provided
+    if (summaryData.pdf_report) {
+      const pdfDir = path.join(__dirname, "..", "..", "public", "pdf");
+      if (!fs.existsSync(pdfDir)) {
+        fs.mkdirSync(pdfDir, { recursive: true });
+      }
+      const pdfFilename = `summary-${meetingId}-${Date.now()}.pdf`;
+      const pdfFilePath = path.join(pdfDir, pdfFilename);
+      fs.writeFileSync(
+        pdfFilePath,
+        Buffer.from(summaryData.pdf_report, "base64") as any,
+      );
+      const pdfUrl = `${serverUrl}/public/pdf/${pdfFilename}`;
+      await meetingRepo.savePdf(meetingId, pdfUrl);
+    }
+
+    const finalMeeting = await meetingRepo.findByMeetingIdDetailed(meetingId);
+
+    return new SuccessResponse(
+      "Meeting summarized successfully",
+      finalMeeting,
+    ).send(res);
+  },
+);
+
+const saveSummary = asyncHandler(
+  async (req: ProtectedRequest, res: Response) => {
+    const { meetingId } = req.params;
+    const { summary, actionItems } = req.body;
+
+    if (!summary || typeof summary !== "string") {
+      throw new BadRequestError("Summary is required");
+    }
+
+    const meeting = await meetingRepo.findByMeetingId(meetingId);
+    if (!meeting) {
+      throw new NotFoundError("Meeting not found");
+    }
+
+    const updatedMeeting = await meetingRepo.saveSummary(
+      meetingId,
+      summary,
+      actionItems || [],
+    );
+
+    return new SuccessResponse(
+      "Summary saved successfully",
+      updatedMeeting,
+    ).send(res);
+  },
+);
+
+const getMyMeetings = asyncHandler(
+  async (req: ProtectedRequest, res: Response) => {
+    const userId = req.user._id;
+    const meetings = await meetingRepo.findByUserId(userId);
+
+    return new SuccessResponse("Meetings fetched successfully", meetings).send(
+      res,
+    );
+  },
+);
+
+const getMeetingDetail = asyncHandler(
+  async (req: ProtectedRequest, res: Response) => {
+    const { meetingId } = req.params;
+
+    const meeting = await meetingRepo.findByMeetingIdDetailed(meetingId);
+    if (!meeting) {
+      throw new NotFoundError("Meeting not found");
+    }
+
+    return new SuccessResponse(
+      "Meeting detail fetched successfully",
+      meeting,
+    ).send(res);
+  },
+);
+
+const saveAudio = asyncHandler(async (req: ProtectedRequest, res: Response) => {
+  const { meetingId } = req.params;
+
+  if (!req.file) {
+    throw new BadRequestError("Audio file is required");
+  }
+
+  const meeting = await meetingRepo.findByMeetingIdDetailed(meetingId);
+  if (!meeting) {
+    throw new NotFoundError("Meeting not found");
+  }
+
+  const audioPath = req.file.path;
+  const audioUrl = `${serverUrl}/public/audio/${req.file.filename}`;
+
+  // 1. Update audio URL first
+  await meetingRepo.saveAudio(meetingId, audioUrl);
+
+  const updatedMeetingAfterAudio =
+    await meetingRepo.findByMeetingIdDetailed(meetingId);
+  if (!updatedMeetingAfterAudio) {
+    throw new InternalError("Meeting not found after audio update");
+  }
+
+  // 2. Perform background processing (Transcription -> PDF)
+  try {
+    // a. Transcribe
+    const segments = await AIService.transcribeAudio(audioPath);
+    const transcriptText = segments.map((s) => s.text).join(" ");
+
+    // b. Generate Summary and PDF from AI Service
+    let summary = "";
+    let actionItems: any[] = [];
+    let pdfUrl = "";
+
+    try {
+      // Fetch latest meeting to get existing messages if any
+      const meeting = await meetingRepo.findByMeetingIdDetailed(meetingId);
+      let combinedText = transcriptText;
+
+      if (meeting?.messages && meeting.messages.length > 0) {
+        const chatTranscript = meeting.messages
+          .map(
+            (msg: any) => `${msg.sender?.username || "Unknown"}: ${msg.text}`,
+          )
+          .join("\n");
+        combinedText = `Audio Transcript:\n${transcriptText}\n\nChat Messages:\n${chatTranscript}`;
+      }
+
+      const summaryData = await AIService.summarizeCall(combinedText);
+      summary = summaryData.summary;
+      actionItems = summaryData.action_items;
+
+      if (summaryData.summary) {
+        await meetingRepo.saveSummary(meetingId, summary, actionItems);
+      }
+
+      if (summaryData.pdf_report) {
+        const pdfDir = path.join(__dirname, "..", "..", "public", "pdf");
+        if (!fs.existsSync(pdfDir)) {
+          fs.mkdirSync(pdfDir, { recursive: true });
+        }
+        const pdfFilename = `meeting-${meetingId}-${Date.now()}.pdf`;
+        const pdfFilePath = path.join(pdfDir, pdfFilename);
+        fs.writeFileSync(
+          pdfFilePath,
+          Buffer.from(summaryData.pdf_report, "base64") as any,
+        );
+        pdfUrl = `${serverUrl}/public/pdf/${pdfFilename}`;
+        await meetingRepo.savePdf(meetingId, pdfUrl);
+      }
+    } catch (summaryError) {
+      console.error("Summary generation failed in saveAudio:", summaryError);
+      // Fallback to basic PDF if summary fails?
+      // For now, just continue with transcription saved
+    }
+
+    // Save segments/transcript
+    await meetingRepo.saveTranscript(meetingId, transcriptText);
+
+    const finalMeeting = await meetingRepo.findByMeetingIdDetailed(meetingId);
+
+    return new SuccessResponse(
+      "Audio saved and processed successfully",
+      finalMeeting,
+    ).send(res);
+  } catch (error: any) {
+    console.error("Failed to process meeting documents:", error);
+    // Even if PDF fails, we already saved the audio
+    return new SuccessResponse("Audio saved, but document processing failed", {
+      ...updatedMeetingAfterAudio,
+      audioUrl,
+    }).send(res);
+  }
+});
+
+const transcribeMeeting = asyncHandler(
+  async (req: ProtectedRequest, res: Response) => {
+    const { meetingId } = req.params;
+
+    const meeting = await meetingRepo.findByMeetingIdDetailed(meetingId);
+    if (!meeting) {
+      throw new NotFoundError("Meeting not found");
+    }
+
+    if (!meeting.audioUrl) {
+      throw new BadRequestError("No audio recording available to transcribe");
+    }
+
+    // Determine local file path from URL
+    // URL: http://.../public/audio/filename.webm
+    const filename = meeting.audioUrl.split("/").pop();
+    if (!filename) throw new InternalError("Invalid audio URL");
+
+    const audioPath = path.join(
+      __dirname,
+      "..",
+      "..",
+      "public",
+      "audio",
+      filename,
+    );
+
+    if (!fs.existsSync(audioPath)) {
+      throw new NotFoundError("Audio file not found on server");
+    }
+
+    const segments = await AIService.transcribeAudio(audioPath);
+    const transcriptText = segments.map((s) => s.text).join(" ");
+
+    const updatedMeeting = await meetingRepo.saveTranscript(
+      meetingId,
+      transcriptText,
+    );
+
+    return new SuccessResponse(
+      "Meeting transcribed successfully",
+      updatedMeeting,
+    ).send(res);
+  },
+);
+
+const generatePdf = asyncHandler(
+  async (req: ProtectedRequest, res: Response) => {
+    const { meetingId } = req.params;
+
+    const meeting = await meetingRepo.findByMeetingIdDetailed(meetingId);
+    if (!meeting) {
+      throw new NotFoundError("Meeting not found");
+    }
+
+    if (!meeting.summary) {
+      throw new BadRequestError("No summary available to generate PDF");
+    }
+
+    const pdfBase64 = await AIService.generatePdf(
+      meeting.summary,
+      meeting.actionItems || [],
+      [], // key topics empty for now
+    );
+
+    const pdfDir = path.join(__dirname, "..", "..", "public", "pdf");
+    if (!fs.existsSync(pdfDir)) {
+      fs.mkdirSync(pdfDir, { recursive: true });
+    }
+    const pdfFilename = `meeting-${meetingId}-${Date.now()}.pdf`;
+    const pdfFilePath = path.join(pdfDir, pdfFilename);
+
+    fs.writeFileSync(pdfFilePath, Buffer.from(pdfBase64, "base64") as any);
+
+    const pdfUrl = `${serverUrl}/public/pdf/${pdfFilename}`;
+    const updatedMeeting = await meetingRepo.savePdf(meetingId, pdfUrl);
+
+    return new SuccessResponse(
+      "PDF generated successfully",
+      updatedMeeting,
+    ).send(res);
+  },
+);
+
 export default {
   createMeeting,
   validateMeeting,
   joinMeeting,
   endMeeting,
+  saveTranscript,
+  saveSummary,
+  getMyMeetings,
+  getMeetingDetail,
+  saveAudio,
+  summarizeMeeting,
+  transcribeMeeting,
+  generatePdf,
 };

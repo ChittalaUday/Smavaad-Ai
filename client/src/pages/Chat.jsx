@@ -12,6 +12,8 @@ import IncomingCall from "../components/IncomingCall";
 import AIChat from "./AIChat";
 import AudioPdfSection from "../components/AudioPdfSection";
 import MeetingSidebar from "../components/MeetingSidebar";
+import { useLocation } from "react-router-dom";
+import { useEffect } from "react";
 
 export default function Chat() {
   const {
@@ -21,6 +23,13 @@ export default function Chat() {
     isChatSelected,
   } = useChat();
   const { showVideoComp, incomingOffer } = useConnectWebRtc();
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.state?.sidebar) {
+      setActiveLeftSidebar(location.state.sidebar);
+    }
+  }, [location.state, setActiveLeftSidebar]);
 
   return (
     <>

@@ -1,5 +1,5 @@
 import { Types } from "mongoose";
-import Meeting, { MeetingModel } from "../model/Meeting";
+import Meeting, { MeetingModel, MeetingActionItem } from "../model/Meeting";
 
 const findByMeetingId = (meetingId: string): Promise<Meeting | null> => {
   return MeetingModel.findOne({ meetingId })
@@ -69,22 +69,6 @@ const removeParticipant = async (
   meetingId: string,
   userId: Types.ObjectId,
 ): Promise<Meeting | null> => {
-  // Logic: Mark the participant as left (set leftAt) rather than removing from array
-  // This allows us to keep history.
-  // Note: If user rejoins, we might add a new entry or update the existing one.
-  // For simplicity implementation, we'll append a new entry on join, so here we update the *latest* entry for this user that doesn't have leftAt.
-
-  // Actually, standard array update in mongo is tricky for "last element matching criteria".
-  // For now, let's just push to a "history" if we wanted complex tracking,
-  // but for simple "current participants", we might want to pull them or just have a separate "activeParticipants" list?
-  // The Prompt asked for "participants[]", usually implies history or current list.
-  // Let's stick to "add new entry on join". logic for "leave" updates the last entry.
-
-  // Finding the specific subdocument to update is hard in one query if there are multiple entries for same user.
-  // Let's simplified: We will add them to list. When they leave, we update the specific entry?
-  // Or maybe just `pull` if we only care about active?
-  // Prompt says "Left Meeting -> Remove participant". I will use $pull for active list simplicity as per "Remove participant" instruction.
-
   return MeetingModel.findOneAndUpdate(
     { meetingId },
     {
@@ -112,6 +96,102 @@ const exists = async (meetingId: string): Promise<boolean> => {
   return meeting !== null;
 };
 
+const saveTranscript = async (
+  meetingId: string,
+  transcript: string,
+): Promise<Meeting | null> => {
+  return MeetingModel.findOneAndUpdate(
+    { meetingId },
+    { $set: { transcript } },
+    { new: true },
+  ).lean();
+};
+
+const saveSummary = async (
+  meetingId: string,
+  summary: string,
+  actionItems: MeetingActionItem[] = [],
+): Promise<Meeting | null> => {
+  return MeetingModel.findOneAndUpdate(
+    { meetingId },
+    { $set: { summary, actionItems } },
+    { new: true },
+  ).lean();
+};
+
+/**
+ * Find all meetings where user is host or participant.
+ * Sorted newest first, returns without full transcript/messages for list view.
+ */
+const findByUserId = (userId: Types.ObjectId): Promise<Meeting[]> => {
+  return MeetingModel.find({
+    $or: [{ host: userId }, { "participants.user": userId }],
+  })
+    .select("-transcript -messages") // Exclude heavy fields for listing
+    .populate("host", "username email avatarUrl")
+    .populate("participants.user", "username email avatarUrl")
+    .sort({ createdAt: -1 })
+    .lean();
+};
+
+/**
+ * Get full meeting detail including transcript, summary, messages.
+ */
+const findByMeetingIdDetailed = (
+  meetingId: string,
+): Promise<Meeting | null> => {
+  return MeetingModel.findOne({ meetingId })
+    .populate("host", "username email avatarUrl")
+    .populate("participants.user", "username email avatarUrl")
+    .populate("messages.sender", "username email avatarUrl")
+    .lean();
+};
+
+/**
+ * Add a chat message to the meeting document.
+ */
+const addMessage = async (
+  meetingId: string,
+  senderId: Types.ObjectId,
+  text: string,
+): Promise<Meeting | null> => {
+  return MeetingModel.findOneAndUpdate(
+    { meetingId },
+    {
+      $push: {
+        messages: {
+          sender: senderId,
+          text,
+          timestamp: new Date(),
+        },
+      },
+    },
+    { new: true },
+  ).lean();
+};
+
+const saveAudio = async (
+  meetingId: string,
+  audioUrl: string,
+): Promise<Meeting | null> => {
+  return MeetingModel.findOneAndUpdate(
+    { meetingId },
+    { $set: { audioUrl } },
+    { new: true },
+  ).lean();
+};
+
+const savePdf = async (
+  meetingId: string,
+  pdfUrl: string,
+): Promise<Meeting | null> => {
+  return MeetingModel.findOneAndUpdate(
+    { meetingId },
+    { $set: { pdfUrl } },
+    { new: true },
+  ).lean();
+};
+
 export default {
   findByMeetingId,
   findById,
@@ -120,4 +200,11 @@ export default {
   removeParticipant,
   endMeeting,
   exists,
+  saveTranscript,
+  saveSummary,
+  findByUserId,
+  findByMeetingIdDetailed,
+  addMessage,
+  saveAudio,
+  savePdf,
 };

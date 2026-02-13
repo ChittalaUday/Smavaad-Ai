@@ -6,12 +6,20 @@ import Controls from "../../components/meeting/Controls";
 import Chat from "../../components/meeting/Chat"; // Meeting Chat
 import ParticipantList from "../../components/meeting/ParticipantList";
 import ChatsSection from "../../components/ChatsSection"; // Personal Chat
+import CallWrapUp from "../../components/meeting/CallWrapUp";
 import { useChat } from "../../context/ChatContext";
+import { CALL_STATES } from "../../hooks/useCallStateManager";
 
 const MeetingRoom = () => {
     const { meetingId } = useParams();
     const navigate = useNavigate();
-    const { joinMeeting, leaveMeeting, activeMeeting } = useMeeting();
+    const {
+        joinMeeting, leaveMeeting, activeMeeting,
+        callState, callSummary, extractedIntents,
+        transcript, formattedDuration, handleDismissWrapUp,
+        isSummarizing, meetingFiles,
+        retrySummarization,
+    } = useMeeting();
     const hasJoinedRef = useRef(false);
 
     // UI State
@@ -30,12 +38,12 @@ const MeetingRoom = () => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [meetingId]);
 
-    // Navigate away when the meeting ends (activeMeeting becomes null after joining)
+    // Navigate away ONLY after wrap-up is dismissed (activeMeeting becomes null)
     useEffect(() => {
         if (activeMeeting) {
             hasJoinedRef.current = true;
         } else if (hasJoinedRef.current) {
-            navigate("/chat", { replace: true });
+            navigate("/chat", { replace: true, state: { sidebar: "meeting" } });
         }
     }, [activeMeeting, navigate]);
 
@@ -46,6 +54,34 @@ const MeetingRoom = () => {
             setActiveSidebar(null);
         }
     };
+
+    const onDismissWrapUp = () => {
+        handleDismissWrapUp();
+        // activeMeeting becomes null → useEffect navigates to /meetings
+    };
+
+    // Show CallWrapUp when call has ENDED
+    if (callState === CALL_STATES.ENDED && hasJoinedRef.current) {
+        return (
+            <div className="flex flex-col h-screen bg-gray-900 text-white">
+                <div className="bg-gray-800 p-2 text-center text-sm text-gray-400">
+                    Meeting ID: {meetingId} | Call Ended
+                </div>
+                <div className="flex-1 flex items-center justify-center p-4">
+                    <CallWrapUp
+                        formattedDuration={formattedDuration}
+                        callSummary={callSummary}
+                        extractedIntents={extractedIntents}
+                        transcript={transcript}
+                        onDismiss={onDismissWrapUp}
+                        isLoading={isSummarizing}
+                        meetingFiles={meetingFiles}
+                        onRetrySummarize={retrySummarization}
+                    />
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="flex flex-col h-screen bg-gray-900 text-white relative">
@@ -87,7 +123,6 @@ const MeetingRoom = () => {
                             <button onClick={() => setActiveSidebar(null)}>✕</button>
                         </div>
                         <div className="flex-1 overflow-hidden">
-                            {/* ChatsSection is designed to fill height, but we need to ensure it fits */}
                             <ChatsSection />
                         </div>
                     </div>

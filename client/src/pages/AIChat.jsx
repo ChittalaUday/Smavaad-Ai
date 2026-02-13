@@ -43,23 +43,25 @@ const AIChat = () => {
 
         const userMessage = { role: "user", content: input };
         setMessages((prev) => [...prev, userMessage]);
+        const currentInput = input;
         setInput("");
         setIsLoading(true);
-
-        const newAssistantMessageIndex = messages.length + 1;
 
         // Add a placeholder message for the assistant
         setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
 
         // Send the new message content only
         await streamChatWithAI(
-            input,
+            currentInput,
             (chunk) => {
                 setMessages((prev) => {
                     const newMessages = [...prev];
-                    const lastMessage = newMessages[newMessages.length - 1];
-                    if (lastMessage.role === "assistant") {
-                        lastMessage.content += chunk;
+                    const lastIndex = newMessages.length - 1;
+                    if (newMessages[lastIndex].role === "assistant") {
+                        newMessages[lastIndex] = {
+                            ...newMessages[lastIndex],
+                            content: newMessages[lastIndex].content + chunk
+                        };
                     }
                     return newMessages;
                 });
@@ -70,7 +72,14 @@ const AIChat = () => {
             (error) => {
                 console.error("Chat error:", error);
                 setIsLoading(false);
-                setMessages((prev) => [...prev, { role: "assistant", content: "Error: Failed to get response." }]);
+                setMessages((prev) => {
+                    const newMessages = [...prev];
+                    const lastIndex = newMessages.length - 1;
+                    if (newMessages[lastIndex].role === "assistant" && !newMessages[lastIndex].content) {
+                        newMessages[lastIndex] = { ...newMessages[lastIndex], content: "Error: Failed to get response." };
+                    }
+                    return newMessages;
+                });
             }
         );
     };

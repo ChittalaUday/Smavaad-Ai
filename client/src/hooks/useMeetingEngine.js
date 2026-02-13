@@ -4,6 +4,16 @@ import { toast } from "react-toastify";
 import { useSocket } from "../context/SocketContext";
 import { useAuth } from "../context/AuthContext";
 import { apiClient } from "../api";
+import { useCallStateManager, CALL_STATES } from "./useCallStateManager";
+import { useRealtimeTranscription } from "./useRealtimeTranscription";
+import {
+  extractIntents,
+  summarizeCall,
+  saveCallTranscript,
+  saveCallSummary,
+  saveMeetingAudio,
+  summarizeMeeting,
+} from "../api";
 
 const ICE_SERVERS = {
   iceServers: [
@@ -18,21 +28,60 @@ export const useMeetingEngine = () => {
   const { user } = useAuth();
 
   // State
-  const [activeMeeting, setActiveMeeting] = useState(null); // { meetingId, type, ... }
-  const [participants, setParticipants] = useState({}); // { [socketId]: { userId, username, stream, ... } }
+  const [activeMeeting, setActiveMeeting] = useState(null);
+  const [participants, setParticipants] = useState({});
   const [localStream, setLocalStream] = useState(null);
   const [isMicOn, setIsMicOn] = useState(true);
   const [isCamOn, setIsCamOn] = useState(true);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
   const [messages, setMessages] = useState([]);
+  const [showTranscript, setShowTranscript] = useState(false);
 
   // Call Specific State
-  const [incomingCall, setIncomingCall] = useState(null); // { meetingId, caller, type }
+  const [incomingCall, setIncomingCall] = useState(null);
+  const [isSummarizing, setIsSummarizing] = useState(false);
+  const [meetingFiles, setMeetingFiles] = useState({
+    audioUrl: null,
+    pdfUrl: null,
+  });
 
   // Refs
-  const peersRef = useRef({}); // { [socketId]: RTCPeerConnection }
+  const peersRef = useRef({});
   const localStreamRef = useRef(null);
   const paramsRef = useRef({ meetingId: null });
+  const intentIntervalRef = useRef(null);
+  const lastIntentLengthRef = useRef(0);
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
+  const audioContextRef = useRef(null);
+  const audioDestRef = useRef(null);
+  const sourceNodesRef = useRef(new Map()); // Map client/socketId -> SourceNode
+
+  // Call State Manager
+  const callStateManager = useCallStateManager();
+  const {
+    callState,
+    initializeCall,
+    activateCall,
+    endCall,
+    dismissWrapUp,
+    appendTranscript,
+    transcript,
+    extractedIntents,
+    callSummary,
+    updateIntents,
+    setPostCallSummary,
+    formattedDuration,
+    greeting,
+    sessionId,
+  } = callStateManager;
+
+  // Real-time Transcription
+  useRealtimeTranscription({
+    localStream,
+    callState,
+    onTranscript: appendTranscript,
+  });
 
   // Initialize Local Media
   const getLocalStream = useCallback(async () => {
@@ -56,14 +105,12 @@ export const useMeetingEngine = () => {
     (targetSocketId, isInitiator) => {
       const pc = new RTCPeerConnection(ICE_SERVERS);
 
-      // Add local tracks
       if (localStreamRef.current) {
         localStreamRef.current.getTracks().forEach((track) => {
           pc.addTrack(track, localStreamRef.current);
         });
       }
 
-      // Handle ICE Candidates
       pc.onicecandidate = (event) => {
         if (event.candidate) {
           socket.emit("meeting-signal", {
@@ -73,7 +120,6 @@ export const useMeetingEngine = () => {
         }
       };
 
-      // Handle Remote Stream
       pc.ontrack = (event) => {
         console.log(`Received track from ${targetSocketId}`, event.streams[0]);
         setParticipants((prev) => ({
@@ -83,12 +129,26 @@ export const useMeetingEngine = () => {
             stream: event.streams[0],
           },
         }));
+
+        // Connect remote audio to recording mix
+        if (audioContextRef.current && audioDestRef.current) {
+          const remoteStream = event.streams[0];
+          if (remoteStream.getAudioTracks().length > 0) {
+            const source =
+              audioContextRef.current.createMediaStreamSource(remoteStream);
+            source.connect(audioDestRef.current);
+            sourceNodesRef.current.set(targetSocketId, source);
+          }
+        }
+
+        // Transition INITIALIZED → ACTIVE when first remote stream arrives
+        activateCall();
       };
 
       peersRef.current[targetSocketId] = pc;
       return pc;
     },
-    [socket],
+    [socket, activateCall],
   );
 
   // Join Meeting
@@ -101,7 +161,6 @@ export const useMeetingEngine = () => {
 
       console.log("joinMeeting: Starting for", meetingId);
 
-      // 1. Get media (continue even if it fails — user can still see remote video)
       const stream = await getLocalStream();
       if (!stream) {
         console.warn(
@@ -111,25 +170,63 @@ export const useMeetingEngine = () => {
 
       paramsRef.current.meetingId = meetingId;
       setActiveMeeting({ meetingId });
-      setParticipants({}); // Reset participants
+      setParticipants({});
       setMessages([]);
-      setIncomingCall(null); // Clear incoming call if joining
+      setIncomingCall(null);
+
+      // Setup Audio Recording
+      if (!audioContextRef.current) {
+        audioContextRef.current = new (
+          window.AudioContext || window.webkitAudioContext
+        )();
+        audioDestRef.current =
+          audioContextRef.current.createMediaStreamDestination();
+      }
+
+      if (audioContextRef.current.state === "suspended") {
+        await audioContextRef.current.resume();
+      }
+
+      if (stream) {
+        const source = audioContextRef.current.createMediaStreamSource(stream);
+        source.connect(audioDestRef.current);
+        sourceNodesRef.current.set("local", source);
+      }
+
+      // Start Recording
+      mediaRecorderRef.current = new MediaRecorder(
+        audioDestRef.current.stream,
+        {
+          mimeType: "audio/webm",
+        },
+      );
+      audioChunksRef.current = [];
+      mediaRecorderRef.current.ondataavailable = (e) => {
+        if (e.data.size > 0) audioChunksRef.current.push(e.data);
+      };
+      mediaRecorderRef.current.start();
+
+      // Initialize call state machine → INITIALIZED
+      initializeCall();
 
       console.log("joinMeeting: activeMeeting set, emitting meeting-join");
-
-      // 2. Emit join event
       socket.emit("meeting-join", { meetingId });
     },
-    [socket, getLocalStream],
+    [socket, getLocalStream, initializeCall],
   );
 
   // Leave Meeting
   const leaveMeeting = useCallback(() => {
     if (!socket || !paramsRef.current.meetingId) return;
 
-    socket.emit("meeting-leave", { meetingId: paramsRef.current.meetingId });
+    const meetingId = paramsRef.current.meetingId;
 
-    // Close all connections
+    // Transition to ENDED state (post-processing begins)
+    endCall();
+
+    socket.emit("meeting-leave", { meetingId });
+
+    // Close all peer connections
     Object.values(peersRef.current).forEach((pc) => pc.close());
     peersRef.current = {};
 
@@ -142,9 +239,53 @@ export const useMeetingEngine = () => {
 
     setParticipants({});
     setMessages([]);
-    setActiveMeeting(null);
+
+    if (intentIntervalRef.current) {
+      clearInterval(intentIntervalRef.current);
+      intentIntervalRef.current = null;
+    }
+
+    // Stop and Upload Recording
+    if (
+      mediaRecorderRef.current &&
+      mediaRecorderRef.current.state !== "inactive"
+    ) {
+      mediaRecorderRef.current.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, {
+          type: "audio/webm",
+        });
+        if (audioBlob.size > 0) {
+          try {
+            console.log("Uploading meeting audio...");
+            const response = await saveMeetingAudio(meetingId, audioBlob);
+            if (response.data?.data) {
+              const { audioUrl, pdfUrl } = response.data.data;
+              setMeetingFiles({ audioUrl, pdfUrl });
+            }
+            console.log("Meeting audio uploaded successfully");
+          } catch (error) {
+            console.error("Failed to upload meeting audio", error);
+          }
+        }
+      };
+      mediaRecorderRef.current.stop();
+    }
+
+    // Clean up nodes
+    sourceNodesRef.current.forEach((node) => node.disconnect());
+    sourceNodesRef.current.clear();
+
+    // Don't clear activeMeeting yet — keep for wrap-up card
+    // Don't reset call state — ENDED state triggers post-processing
+    // After wrap-up is dismissed, handleDismissWrapUp() clears activeMeeting → Room.jsx navigates away
     paramsRef.current.meetingId = null;
-  }, [socket]);
+  }, [socket, endCall]);
+
+  // Dismiss wrap-up → IDLE
+  const handleDismissWrapUp = useCallback(() => {
+    dismissWrapUp();
+    setActiveMeeting(null);
+  }, [dismissWrapUp]);
 
   // Start Call
   const startCall = useCallback(
@@ -158,13 +299,10 @@ export const useMeetingEngine = () => {
 
         if (data.statusCode === "10000" || data.data) {
           const meeting = data.data;
-          // 2. Notify Participants
           socket.emit("meeting-call-initiate", {
             meetingId: meeting.meetingId,
             participants: participantsList,
           });
-
-          // 3. Join the call (this sets activeMeeting, which triggers the CallOverlay)
           await joinMeeting(meeting.meetingId);
         } else {
           toast.error(data.message || "Failed to start call");
@@ -219,7 +357,109 @@ export const useMeetingEngine = () => {
     [socket, user],
   );
 
-  // Socket Events Handling
+  // ─── Periodic Intent Extraction during ACTIVE state ─────────────
+  useEffect(() => {
+    if (callState === CALL_STATES.ACTIVE) {
+      intentIntervalRef.current = setInterval(async () => {
+        const currentTranscript = transcript;
+        if (currentTranscript.length > lastIntentLengthRef.current + 100) {
+          lastIntentLengthRef.current = currentTranscript.length;
+          try {
+            const newText = currentTranscript.slice(
+              lastIntentLengthRef.current - 100,
+            );
+            const result = await extractIntents(newText);
+            if (result) {
+              updateIntents(result);
+            }
+          } catch (err) {
+            console.error("Intent extraction failed:", err);
+          }
+        }
+      }, 60000);
+    }
+
+    return () => {
+      if (intentIntervalRef.current) {
+        clearInterval(intentIntervalRef.current);
+        intentIntervalRef.current = null;
+      }
+    };
+  }, [callState, transcript, updateIntents]);
+
+  // ─── Post-Call Processing when ENDED ────────────────────────────
+  const runPostProcessing = useCallback(async () => {
+    console.log("[PostProcessing] Starting...");
+    setIsSummarizing(true);
+
+    const meetingId = activeMeeting?.meetingId;
+    const currentTranscript = transcript;
+
+    try {
+      // 1. Save transcript to backend
+      if (meetingId && currentTranscript) {
+        try {
+          await saveCallTranscript(meetingId, currentTranscript);
+          console.log("[PostProcessing] Transcript saved");
+        } catch (err) {
+          console.error("[PostProcessing] Failed to save transcript:", err);
+        }
+      }
+
+      // 2. Trigger summarization via backend (which handles AI + PDF + DB)
+      if (meetingId && currentTranscript && currentTranscript.length > 20) {
+        try {
+          const response = await summarizeMeeting(meetingId);
+          if (response.data?.data) {
+            const updatedMeeting = response.data.data;
+            // Update local state to reflect summary
+            setPostCallSummary({
+              summary: updatedMeeting.summary,
+              action_items: updatedMeeting.actionItems || [],
+              key_topics: updatedMeeting.keyTopics || [], // Note: check backend key names
+            });
+            // Update meeting files for download links
+            setMeetingFiles({
+              audioUrl: updatedMeeting.audioUrl,
+              pdfUrl: updatedMeeting.pdfUrl,
+            });
+          }
+        } catch (err) {
+          console.error("[PostProcessing] Summarization failed:", err);
+          setPostCallSummary({
+            summary: "Call summary could not be generated automatically.",
+            action_items: [],
+            key_topics: [],
+          });
+        }
+      } else {
+        setPostCallSummary({
+          summary:
+            currentTranscript?.length <= 20
+              ? "Call was too short to generate a summary."
+              : "No transcript available for summarization.",
+          action_items: [],
+          key_topics: [],
+        });
+      }
+    } finally {
+      setIsSummarizing(false);
+      console.log("[PostProcessing] Complete");
+    }
+  }, [
+    activeMeeting?.meetingId,
+    transcript,
+    setPostCallSummary,
+    setMeetingFiles,
+  ]);
+
+  useEffect(() => {
+    if (callState === CALL_STATES.ENDED) {
+      runPostProcessing();
+    }
+  }, [callState, runPostProcessing]);
+
+  // ─── Socket Events ─────────────────────────────────────────────
   useEffect(() => {
     if (!socket) return;
 
@@ -236,7 +476,6 @@ export const useMeetingEngine = () => {
         [socketId]: { userId, username, avatarUrl, stream: null },
       }));
 
-      // Initiate WebRTC connection (We are existing user, they are new)
       const pc = createPeerConnection(socketId, true);
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
@@ -293,7 +532,6 @@ export const useMeetingEngine = () => {
         });
 
         setParticipants((prev) => {
-          // Update if missing OR if we now have better info (e.g. sender details)
           if (!prev[senderSocketId] || !prev[senderSocketId].userId) {
             return {
               ...prev,
@@ -321,16 +559,11 @@ export const useMeetingEngine = () => {
     const handleMeetingError = ({ message }) => {
       toast.error(message);
       leaveMeeting();
-      // Redirect logic?
-      // Using window.location is harsh, maybe just state reset
-      // window.location.href = "/chat";
     };
 
     const handleCallIncoming = (data) => {
-      // data: { meetingId, caller, type }
       console.log("Incoming call:", data);
       setIncomingCall(data);
-      // Play ringtone? handled by Context or UI
     };
 
     const handleCallRejected = (data) => {
@@ -338,10 +571,15 @@ export const useMeetingEngine = () => {
       leaveMeeting();
     };
 
+    const handleChatHistory = (history) => {
+      setMessages(history);
+    };
+
     socket.on("meeting-user-joined", handleUserJoined);
     socket.on("meeting-user-left", handleUserLeft);
     socket.on("meeting-signal", handleSignal);
     socket.on("meeting-chat-message", handleChatMessage);
+    socket.on("meeting-chat-history", handleChatHistory);
     socket.on("meeting-error", handleMeetingError);
     socket.on("call-incoming", handleCallIncoming);
     socket.on("call-rejected", handleCallRejected);
@@ -351,6 +589,7 @@ export const useMeetingEngine = () => {
       socket.off("meeting-user-left", handleUserLeft);
       socket.off("meeting-signal", handleSignal);
       socket.off("meeting-chat-message", handleChatMessage);
+      socket.off("meeting-chat-history", handleChatHistory);
       socket.off("meeting-error", handleMeetingError);
       socket.off("call-incoming", handleCallIncoming);
       socket.off("call-rejected", handleCallRejected);
@@ -390,12 +629,10 @@ export const useMeetingEngine = () => {
   const stopScreenShare = async () => {
     if (!isScreenSharing) return;
 
-    // Stop screen share stream
     if (localStreamRef.current) {
       localStreamRef.current.getTracks().forEach((t) => t.stop());
     }
 
-    // Revert to camera
     const stream = await getLocalStream();
     if (stream) {
       const videoTrack = stream.getVideoTracks()[0];
@@ -434,6 +671,10 @@ export const useMeetingEngine = () => {
     }
   };
 
+  const toggleTranscript = () => {
+    setShowTranscript((prev) => !prev);
+  };
+
   return {
     user,
     activeMeeting,
@@ -454,5 +695,20 @@ export const useMeetingEngine = () => {
     incomingCall,
     acceptCall,
     rejectCall,
+
+    // Call State Manager
+    callState,
+    sessionId,
+    transcript,
+    extractedIntents,
+    callSummary,
+    formattedDuration,
+    greeting,
+    isSummarizing,
+    showTranscript,
+    toggleTranscript,
+    handleDismissWrapUp,
+    meetingFiles,
+    retrySummarization: runPostProcessing,
   };
 };

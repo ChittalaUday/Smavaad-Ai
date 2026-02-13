@@ -18,6 +18,19 @@ export interface TranscribeResponse {
   segments: Segment[];
 }
 
+export interface ActionItem {
+  task: string;
+  owner?: string;
+  deadline?: string;
+}
+
+export interface SummaryResponse {
+  summary: string;
+  action_items: ActionItem[];
+  key_topics: string[];
+  pdf_report?: string; // base64
+}
+
 export interface ChatMessage {
   role: string;
   content: string;
@@ -73,6 +86,39 @@ export class AIService {
     } catch (error) {
       console.error("AI Service Generate Error:", error);
       throw new InternalError("Failed to generate AI response");
+    }
+  }
+
+  static async summarizeCall(
+    transcript: string,
+    intents?: any[],
+  ): Promise<SummaryResponse> {
+    try {
+      const response = await axios.post<SummaryResponse>(
+        `${aiServiceUrl}/api/call-summarize`,
+        { transcript, intents },
+      );
+      return response.data;
+    } catch (error) {
+      console.error("AI Service Summary Error:", error);
+      throw new InternalError("Failed to summarize call");
+    }
+  }
+
+  static async generatePdf(
+    summary: string,
+    actionItems: any[],
+    keyTopics: string[],
+  ): Promise<string> {
+    try {
+      const response = await axios.post<{ pdf_report: string }>(
+        `${aiServiceUrl}/api/generate-pdf`,
+        { summary, action_items: actionItems, key_topics: keyTopics },
+      );
+      return response.data.pdf_report;
+    } catch (error) {
+      console.error("AI Service PDF Error:", error);
+      throw new InternalError("Failed to generate PDF");
     }
   }
 }

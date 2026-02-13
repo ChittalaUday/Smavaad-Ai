@@ -4,6 +4,8 @@ import Chat from "./pages/Chat";
 import AIChat from "./pages/AIChat";
 import MeetingHome from "./pages/meeting/Home";
 import MeetingRoom from "./pages/meeting/Room";
+import MeetingHistory from "./pages/meeting/History";
+import MeetingDetail from "./pages/meeting/Detail";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
 import { ChatProvider } from "./context/ChatContext";
@@ -54,6 +56,8 @@ const AuthenticatedApp = () => {
             <Route path="/ai-chat" element={<AIChat />} />
             <Route path="/meeting" element={<MeetingHome />} />
             <Route path="/meeting/:meetingId" element={<MeetingRoom />} />
+            <Route path="/meetings" element={<MeetingHistory />} />
+            <Route path="/meetings/:meetingId" element={<MeetingDetail />} />
           </Routes>
         </MeetingProvider>
       </ChatProvider>

@@ -1,9 +1,21 @@
 import multer from "multer";
 import path from "path";
+import fs from "fs";
 // setup multer storage for storing the files
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, path.join(__dirname, "..", "..", "public", "images"));
+    let folder = "images";
+    if (file.fieldname === "audio") folder = "audio";
+    else if (file.fieldname === "pdf") folder = "pdf";
+
+    const targetPath = path.join(__dirname, "..", "..", "public", folder);
+
+    // Create directory if it doesn't exist
+    if (!fs.existsSync(targetPath)) {
+      fs.mkdirSync(targetPath, { recursive: true });
+    }
+
+    cb(null, targetPath);
   },
 
   // store the files in in it's actual format rather than binary
@@ -12,7 +24,7 @@ const storage = multer.diskStorage({
     let fileExtension = "";
     if (file.originalname.split(".").length > 1) {
       fileExtension = file.originalname.substring(
-        file.originalname.lastIndexOf(".")
+        file.originalname.lastIndexOf("."),
       );
     }
 
@@ -31,7 +43,7 @@ const storage = multer.diskStorage({
       filenameWithoutExtension +
         Date.now() +
         Math.ceil(Math.random() * 1e3) +
-        fileExtension
+        fileExtension,
     );
   },
 });

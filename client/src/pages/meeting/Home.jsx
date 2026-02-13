@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { createMeeting } from "../../api";
 import { toast } from "react-toastify";
@@ -74,6 +74,14 @@ const MeetingHome = () => {
                             Join
                         </button>
                     </form>
+
+                    {/* Meeting History Link */}
+                    <Link
+                        to="/meetings"
+                        className="block w-full py-3 px-4 border border-gray-700 text-sm font-medium rounded-md text-gray-300 hover:text-white hover:border-gray-500 transition-colors text-center mt-4"
+                    >
+                        📋 View Meeting History
+                    </Link>
                 </div>
             </div>
         </div>

@@ -3,11 +3,12 @@ import { useMeeting } from "../../context/MeetingContext";
 import {
     BsMic, BsMicMute,
     BsCameraVideo, BsCameraVideoOff,
-    BsTelephoneX
+    BsTelephoneX,
+    BsChatDots, BsPeople
 } from "react-icons/bs";
 import { MdScreenShare, MdStopScreenShare } from "react-icons/md";
 
-const Controls = () => {
+const Controls = ({ onChatToggle, onParticipantsToggle }) => {
     const {
         toggleMic, toggleCam,
         isMicOn, isCamOn,
@@ -51,6 +52,26 @@ const Controls = () => {
             >
                 {isScreenSharing ? <MdStopScreenShare size={24} /> : <MdScreenShare size={24} />}
             </button>
+
+            {onChatToggle && (
+                <button
+                    onClick={onChatToggle}
+                    className="p-4 rounded-full bg-gray-700 hover:bg-gray-600 text-white transition-colors"
+                    title="Chat"
+                >
+                    <BsChatDots size={24} />
+                </button>
+            )}
+
+            {onParticipantsToggle && (
+                <button
+                    onClick={onParticipantsToggle}
+                    className="p-4 rounded-full bg-gray-700 hover:bg-gray-600 text-white transition-colors"
+                    title="Participants"
+                >
+                    <BsPeople size={24} />
+                </button>
+            )}
 
             <button
                 onClick={leaveMeeting}

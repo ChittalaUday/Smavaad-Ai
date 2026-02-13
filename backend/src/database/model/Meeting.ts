@@ -19,6 +19,18 @@ export type CallStatus =
   | "missed"
   | "ended";
 
+export interface MeetingActionItem {
+  task: string;
+  owner?: string;
+  deadline?: string;
+}
+
+export interface MeetingMessage {
+  sender: Types.ObjectId | User;
+  text: string;
+  timestamp: Date;
+}
+
 export default interface Meeting {
   _id: Types.ObjectId;
   meetingId: string; // The public-facing ID (e.g., "abc-defg-hij")
@@ -31,6 +43,12 @@ export default interface Meeting {
   updatedAt?: Date;
   type: MeetingType;
   callStatus?: CallStatus;
+  transcript?: string;
+  summary?: string;
+  actionItems?: MeetingActionItem[];
+  messages?: MeetingMessage[];
+  audioUrl?: string;
+  pdfUrl?: string;
 }
 
 const schema = new Schema<Meeting>(
@@ -93,6 +111,36 @@ const schema = new Schema<Meeting>(
         },
       },
     ],
+    transcript: {
+      type: Schema.Types.String,
+      default: "",
+    },
+    summary: {
+      type: Schema.Types.String,
+      default: "",
+    },
+    actionItems: [
+      {
+        task: { type: Schema.Types.String },
+        owner: { type: Schema.Types.String },
+        deadline: { type: Schema.Types.String },
+      },
+    ],
+    messages: [
+      {
+        sender: { type: Schema.Types.ObjectId, ref: "User" },
+        text: { type: Schema.Types.String },
+        timestamp: { type: Schema.Types.Date, default: Date.now },
+      },
+    ],
+    audioUrl: {
+      type: Schema.Types.String,
+      default: "",
+    },
+    pdfUrl: {
+      type: Schema.Types.String,
+      default: "",
+    },
   },
   {
     timestamps: true,

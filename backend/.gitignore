@@ -24,3 +24,9 @@ dist-ssr
 *.sw?
 
 .env
+public/*pdf
+public/images/*mp3
+public/images/*wav
+public/images/*webm
+public/images/*mp4
+public/*audio

@@ -119,17 +119,17 @@ export const streamChatWithAI = async (
 ) => {
   try {
     const token = LocalStorage.get("token");
-    const response = await fetch(
-      `${import.meta.env.VITE_SERVER_URL}api/chat/ai`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ message }),
+    const baseUrl = import.meta.env.VITE_SERVER_URL;
+    const url = `${baseUrl.endsWith("/") ? baseUrl : baseUrl + "/"}api/chat/ai`;
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
       },
-    );
+      body: JSON.stringify({ message }),
+    });
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -137,24 +137,35 @@ export const streamChatWithAI = async (
 
     const reader = response.body.getReader();
     const decoder = new TextDecoder("utf-8");
+    let buffer = "";
 
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
 
-      const chunk = decoder.decode(value, { stream: true });
-      const lines = chunk.split("\n");
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+
+      // Keep the last partial line in the buffer
+      buffer = lines.pop();
 
       for (const line of lines) {
-        if (line.trim() !== "") {
-          try {
-            const parsed = JSON.parse(line);
-            if (parsed.content) {
-              onChunk(parsed.content);
-            }
-          } catch (e) {
-            console.error("Error parsing chunk:", e);
+        const trimmed = line.trim();
+        if (!trimmed || !trimmed.startsWith("data: ")) continue;
+
+        const dataStr = trimmed.replace("data: ", "");
+        if (dataStr === "[DONE]") {
+          if (onComplete) onComplete();
+          return;
+        }
+
+        try {
+          const parsed = JSON.parse(dataStr);
+          if (parsed.content) {
+            onChunk(parsed.content);
           }
+        } catch (e) {
+          console.error("Error parsing message JSON:", e, dataStr);
         }
       }
     }
@@ -176,6 +187,81 @@ export const validateMeeting = (meetingId) => {
 
 export const joinMeeting = (meetingId) => {
   return apiClient.post(`/api/meetings/${meetingId}/join`);
+};
+
+// Call State Manager APIs
+const AI_SERVICE_URL =
+  import.meta.env.VITE_AI_SERVICE_URL || "http://127.0.0.1:8000";
+
+export const extractIntents = async (transcript) => {
+  try {
+    const response = await fetch(`${AI_SERVICE_URL}/api/extract-intents`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ transcript }),
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return await response.json();
+  } catch (error) {
+    console.error("extractIntents error:", error);
+    return null;
+  }
+};
+
+export const summarizeCall = async (transcript, intents) => {
+  try {
+    const response = await fetch(`${AI_SERVICE_URL}/api/call-summarize`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ transcript, intents }),
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return await response.json();
+  } catch (error) {
+    console.error("summarizeCall error:", error);
+    return null;
+  }
+};
+
+export const saveCallTranscript = (meetingId, transcript) => {
+  return apiClient.post(`/api/meetings/${meetingId}/transcript`, {
+    transcript,
+  });
+};
+
+export const saveCallSummary = (meetingId, summary, actionItems) => {
+  return apiClient.post(`/api/meetings/${meetingId}/summary`, {
+    summary,
+    actionItems,
+  });
+};
+
+export const getMyMeetings = () => {
+  return apiClient.get("/api/meetings/my");
+};
+
+export const getMeetingDetail = (meetingId) => {
+  return apiClient.get(`/api/meetings/${meetingId}/detail`);
+};
+
+export const summarizeMeeting = (meetingId) => {
+  return apiClient.post(`/api/meetings/${meetingId}/summarize`);
+};
+
+export const transcribeMeeting = (meetingId) => {
+  return apiClient.post(`/api/meetings/${meetingId}/transcribe`);
+};
+
+export const generateMeetingPdf = (meetingId) => {
+  return apiClient.post(`/api/meetings/${meetingId}/generate-pdf`);
+};
+
+export const saveMeetingAudio = (meetingId, audioBlob) => {
+  const formData = new FormData();
+  formData.append("audio", audioBlob, `meeting-${meetingId}.webm`);
+  return apiClient.post(`/api/meetings/${meetingId}/audio`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
 };
 
 export default apiClient;

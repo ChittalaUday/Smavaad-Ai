@@ -9,7 +9,7 @@ import JWT from "../core/JWT";
 import userRepo from "../database/repositories/userRepo";
 import colorsUtils from "../helpers/colorsUtils";
 import { Types } from "mongoose";
-  
+
 declare module "socket.io" {
   interface Socket {
     user?: User;
@@ -137,6 +137,24 @@ const mountMeetingEvents = (socket: Socket) => {
       // console.log(`User ${socket.user?.username} joining meeting ${meetingId}`);
       socket.join(`meeting:${meetingId}`);
 
+      // Fetch existing chat history and send to the user
+      const detailedMeeting =
+        await meetingRepo.findByMeetingIdDetailed(meetingId);
+      if (detailedMeeting && detailedMeeting.messages) {
+        socket.emit(
+          "meeting-chat-history",
+          detailedMeeting.messages.map((m) => ({
+            text: m.text,
+            sender: (m.sender as any).username || "Unknown",
+            avatarUrl: (m.sender as any).avatarUrl,
+            time: m.timestamp,
+            isLocal:
+              (m.sender as any)._id?.toString() ===
+              socket.user?._id?.toString(),
+          })),
+        );
+      }
+
       // Notify others in the room
       socket.to(`meeting:${meetingId}`).emit("meeting-user-joined", {
         socketId: socket.id,
@@ -152,13 +170,23 @@ const mountMeetingEvents = (socket: Socket) => {
     }
   });
 
-  socket.on("meeting-leave", ({ meetingId }) => {
+  socket.on("meeting-leave", async ({ meetingId }) => {
     // console.log(`User ${socket.user?.username} leaving meeting ${meetingId}`);
     socket.leave(`meeting:${meetingId}`);
     socket.to(`meeting:${meetingId}`).emit("meeting-user-left", {
       socketId: socket.id,
       userId: socket.user?._id,
     });
+
+    // Auto-end meeting if no one is left
+    const room = socket.nsp.adapter.rooms.get(`meeting:${meetingId}`);
+    if (!room || room.size === 0) {
+      colorsUtils.log(
+        "info",
+        `Auto-ending meeting ${meetingId} as all participants left.`,
+      );
+      await meetingRepo.endMeeting(meetingId);
+    }
   });
 
   // Relay signaling data to a specific peer in the meeting
@@ -175,7 +203,16 @@ const mountMeetingEvents = (socket: Socket) => {
     });
   });
 
-  socket.on("meeting-chat-message", ({ meetingId, message }) => {
+  socket.on("meeting-chat-message", async ({ meetingId, message }) => {
+    // Persist message to database
+    if (socket.user?._id && message.text) {
+      try {
+        await meetingRepo.addMessage(meetingId, socket.user._id, message.text);
+      } catch (error) {
+        console.error("Error saving meeting chat message:", error);
+      }
+    }
+
     socket.to(`meeting:${meetingId}`).emit("meeting-chat-message", {
       ...message,
       sender: socket.user?.username,
@@ -253,6 +290,26 @@ const initSocketIo = (io: any): void => {
       mountMeetingEvents(socket);
 
       // disconnect event
+      socket.on("disconnecting", async () => {
+        const rooms = Array.from(socket.rooms);
+        for (const roomName of rooms) {
+          if (roomName.startsWith("meeting:")) {
+            const meetingId = roomName.replace("meeting:", "");
+            // Check room size after this socket leaves
+            const room = socket.nsp.adapter.rooms.get(roomName);
+            // room.size is current size including this socket.
+            // If size is 1, it means this is the last socket.
+            if (room && room.size === 1) {
+              colorsUtils.log(
+                "info",
+                `Auto-ending meeting ${meetingId} on disconnect as last participant left.`,
+              );
+              await meetingRepo.endMeeting(meetingId);
+            }
+          }
+        }
+      });
+
       socket.on(ChatEventEnum.DISCONNECTED_EVENT, () => {
         if (socket.user?._id) {
           activeCallHosts.delete(socket.user._id.toString());

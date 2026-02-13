@@ -14,3 +14,5 @@ pyannote.audio
 pydub
 requests
 Ollama
+websockets
+reportlab

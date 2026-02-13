@@ -17,6 +17,10 @@ const ParticipantList = ({ onClose }) => {
     }, []);
 
     const handleAddFriend = async (participantId) => {
+        if (!participantId || participantId.length !== 24) {
+            toast.error("Cannot add this user as friend");
+            return;
+        }
         try {
             await apiClient.post("/api/friends/send", { receiverId: participantId });
             toast.success("Friend request sent!");
@@ -26,9 +30,13 @@ const ParticipantList = ({ onClose }) => {
     };
 
     const handleMessage = async (participant) => {
+        if (!participant.userId) {
+            toast.error("Cannot message this user");
+            return;
+        }
         try {
-            // Get or create chat
-            const { data } = await apiClient.get(`/api/chat/c/${participant.userId}`);
+            // Create or get existing chat (POST, not GET)
+            const { data } = await apiClient.post(`/api/chat/c/${participant.userId}`);
 
             if (data.data) {
                 const chatData = data.data.existing || data.data;
