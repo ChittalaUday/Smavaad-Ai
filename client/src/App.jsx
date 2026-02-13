@@ -2,7 +2,9 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Chat from "./pages/Chat";
 import AIChat from "./pages/AIChat";
-import { Routes, Route, Navigate } from "react-router-dom";
+import MeetingHome from "./pages/meeting/Home";
+import MeetingRoom from "./pages/meeting/Room";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
 import { ChatProvider } from "./context/ChatContext";
 import { SocketProvider } from "./context/SocketContext";
@@ -18,11 +20,14 @@ import "react-toastify/dist/ReactToastify.css";
 
 /**
  * Renders the active call as a full-screen overlay on top of the chat.
- * Only shown when activeMeeting is set.
+ * Only shown when activeMeeting is set AND user is NOT already on a /meeting page
+ * (MeetingRoom renders its own full UI).
  */
 const CallLayer = () => {
   const { activeMeeting } = useMeeting();
-  if (!activeMeeting) return null;
+  const location = useLocation();
+  const isOnMeetingPage = location.pathname.startsWith("/meeting");
+  if (!activeMeeting || isOnMeetingPage) return null;
   return <CallOverlay />;
 };
 
@@ -47,6 +52,8 @@ const AuthenticatedApp = () => {
               }
             />
             <Route path="/ai-chat" element={<AIChat />} />
+            <Route path="/meeting" element={<MeetingHome />} />
+            <Route path="/meeting/:meetingId" element={<MeetingRoom />} />
           </Routes>
         </MeetingProvider>
       </ChatProvider>

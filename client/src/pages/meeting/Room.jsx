@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import React, { useEffect, useRef, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { useMeeting } from "../../context/MeetingContext";
 import VideoGrid from "../../components/meeting/VideoGrid";
 import Controls from "../../components/meeting/Controls";
@@ -10,7 +10,9 @@ import { useChat } from "../../context/ChatContext";
 
 const MeetingRoom = () => {
     const { meetingId } = useParams();
+    const navigate = useNavigate();
     const { joinMeeting, leaveMeeting, activeMeeting } = useMeeting();
+    const hasJoinedRef = useRef(false);
 
     // UI State
     // 'meeting-chat' | 'participants' | 'personal-chat' | null
@@ -27,6 +29,15 @@ const MeetingRoom = () => {
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [meetingId]);
+
+    // Navigate away when the meeting ends (activeMeeting becomes null after joining)
+    useEffect(() => {
+        if (activeMeeting) {
+            hasJoinedRef.current = true;
+        } else if (hasJoinedRef.current) {
+            navigate("/chat", { replace: true });
+        }
+    }, [activeMeeting, navigate]);
 
     const handleParticipantAction = (action) => {
         if (action === "personal-chat") {
