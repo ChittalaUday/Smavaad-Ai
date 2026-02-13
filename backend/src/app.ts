@@ -4,6 +4,7 @@ import { corsUrl, environment } from "./config";
 import authRoutes from "./routes/user.routes";
 import chatRoutes from "./routes/chat.routes";
 import messageRoutes from "./routes/message.routes";
+import aiChatRoutes from "./routes/aiChat.routes";
 import "./database"; // initialize database
 import {
   ApiError,
@@ -42,8 +43,8 @@ const limiter: RateLimitRequestHandler = rateLimit({
       new RateLimitError(
         `You exceeded the request limit. Allowed ${options.max} requests per ${
           options.windowMs / 60000
-        } minute.`
-      )
+        } minute.`,
+      ),
     );
   },
 });
@@ -59,7 +60,7 @@ app.use(
     origin: true,
     optionsSuccessStatus: 200,
     credentials: true,
-  })
+  }),
 );
 app.use(morgan("dev"));
 app.use(cookieParser());
@@ -78,6 +79,9 @@ app.use("/api/chat", chatRoutes);
 // message Routes
 // message Routes
 app.use("/api/messages", messageRoutes);
+
+// ai chat routes
+app.use("/api", aiChatRoutes);
 
 // pdf Routes
 import pdfRoutes from "./routes/pdf.routes";
@@ -108,13 +112,13 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
       console.error(
         `500 - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}` +
           "\n" +
-          `Error Stack: ${err.stack}`
+          `Error Stack: ${err.stack}`,
       );
   } else {
     console.error(
       `500 - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}` +
         "\n" +
-        `Error Stack: ${err.stack}`
+        `Error Stack: ${err.stack}`,
     );
     if (environment === "development") {
       return res.status(500).send(err.stack);
