@@ -1,7 +1,7 @@
 import React from "react";
 import { LuUser, PiChats, RiUserSearchLine, logo, profile } from "../assets";
 import { FaFilePdf } from "react-icons/fa";
-import { RiRobot2Line } from "react-icons/ri";
+import { RiRobot2Line, RiVideoAddLine } from "react-icons/ri";
 import Avatar from "react-avatar";
 import ThemeSwitchButton from "../components/ThemeSwitchButton";
 import { useAuth } from "../context/AuthContext";
@@ -12,6 +12,7 @@ export default function SideMenu({ activeLeftSidebar, setActiveLeftSidebar }) {
     { Icon: RiUserSearchLine, name: "searchUser" },
     { Icon: FaFilePdf, name: "audioPdf" },
     { Icon: RiRobot2Line, name: "aiChat" },
+    { Icon: RiVideoAddLine, name: "meeting" },
   ];
 
   const { logout, user } = useAuth();

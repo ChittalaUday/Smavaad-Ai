@@ -9,6 +9,7 @@ import {
 import { Fragment, useRef, useState } from "react";
 import { BiSearch, RiUserSearchLine, RxCross2, profile2 } from "../assets";
 import Avatar from "react-avatar";
+import { toast } from "react-toastify";
 import {
   createOneToOneChat,
   getAllcurrentUserChats,
@@ -58,7 +59,7 @@ export function AddChat({ open }) {
 
   // create a new chat with a new user
   const createNewOneToOneChat = async () => {
-    if (!newChatUser) return alert("please select an user"); // if user not selected to create chat with
+    if (!newChatUser) return toast.info("please select an user"); // if user not selected to create chat with
 
     // handle the request to create a new chat
     await requestHandler(
@@ -68,7 +69,7 @@ export function AddChat({ open }) {
         const { data } = res;
         // alert a message if chat already exists by seeing the flag field "existing"
         if (data?.existing) {
-          return alert("chat already exists with the selected user");
+          return toast.info("chat already exists with the selected user");
         }
 
         // if chat is created fetch all the updated current user chats
@@ -76,7 +77,7 @@ export function AddChat({ open }) {
         setActiveLeftSidebar("recentChats");
         handleClose();
       },
-      alert
+      toast.error
     );
   };
 
@@ -84,12 +85,12 @@ export function AddChat({ open }) {
   const createNewGroupChat = async () => {
     // check if group name exists or not
     if (!groupName.trim()) {
-      return alert("no group name provided");
+      return toast.warning("no group name provided");
     }
 
     // check for group chat participants
     if (!groupChatParticipants.length || groupChatParticipants.length < 2) {
-      return alert("There must be atleast 2 members in the group");
+      return toast.warning("There must be atleast 2 members in the group");
     }
 
     await requestHandler(

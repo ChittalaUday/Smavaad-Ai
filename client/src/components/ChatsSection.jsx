@@ -23,6 +23,7 @@ import Loading from "./Loading";
 import { getOpponentParticipant, limitChar } from "../utils";
 import OutsideClickHandler from "react-outside-click-handler";
 import { useConnectWebRtc } from "../context/WebRtcContext";
+import { useMeeting } from "../context/MeetingContext";
 import ViewImage from "./ViewImage";
 import Avatar from "react-avatar";
 import { summarizeChat } from "../api";
@@ -287,17 +288,17 @@ export default function ChatsSection() {
     scrollToBottomRef.current?.scrollIntoView();
   };
 
-  const { handleCall, setTargetUserId, targetUserId } = useConnectWebRtc();
+  // const { handleCall, setTargetUserId, targetUserId } = useConnectWebRtc();
+  const { startCall } = useMeeting();
 
   const handleCallButtonClick = async () => {
     if (currentSelectedChat.current?.isGroupChat) {
-      const sentMsg = await sendChatMessage("📞 Started a group video call");
-      if (sentMsg) setCallMessageId(sentMsg._id);
+      // Filter out self from participants list if needed, or backend handles it
+      const participants = currentSelectedChat.current.participants.map(p => p._id);
+      await startCall(participants);
     } else {
       if (opponentParticipant?._id) {
-        setTargetUserId(opponentParticipant?._id);
-        const sentMsg = await sendChatMessage("📞 Started a video call");
-        if (sentMsg) setCallMessageId(sentMsg._id);
+        await startCall([opponentParticipant._id]);
       }
     }
   };
@@ -316,12 +317,7 @@ export default function ChatsSection() {
     }
   };
 
-  // handle call only if the target user id is available
-  useEffect(() => {
-    if (targetUserId) {
-      handleCall();
-    }
-  }, [targetUserId]);
+
 
   useEffect(() => {
     scrollToBottom();

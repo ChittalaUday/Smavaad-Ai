@@ -15,6 +15,7 @@ import {
   updateMessage,
 } from "../api";
 import { requestHandler } from "../utils";
+import { toast } from "react-toastify";
 import { useSocket } from "./SocketContext";
 
 const chatContext = createContext();
@@ -53,15 +54,15 @@ export const ChatProvider = ({ children }) => {
         const { data } = res;
         setCurrentUserChats(data || []);
       },
-      alert
+      toast.error
     );
   };
 
   // function to get current selected chat messages
   const getMessages = (chatId) => {
-    if (!chatId) return alert("no chat selected");
+    if (!chatId) return toast.error("no chat selected");
 
-    if (!socket) return alert("socket connection not available");
+    if (!socket) return toast.error("socket connection not available");
 
     // emit an event to join the current chat
     socket.emit(socketEvents.JOIN_CHAT_EVENT, chatId);
@@ -73,7 +74,7 @@ export const ChatProvider = ({ children }) => {
         const { data } = res;
         setMessages(data || []);
       },
-      alert
+      toast.error
     );
   };
 
@@ -100,7 +101,7 @@ export const ChatProvider = ({ children }) => {
       async () => await deleteMessage(messageId),
       null,
       (res) => { },
-      alert
+      toast.error
     );
   };
 
@@ -133,7 +134,7 @@ export const ChatProvider = ({ children }) => {
       async () => await deleteChat(chatId),
       null,
       (res) => { },
-      alert
+      toast.error
     );
   };
 
@@ -163,7 +164,7 @@ export const ChatProvider = ({ children }) => {
           );
           resolve(res.data);
         },
-        alert
+        toast.error
       );
     });
   };
@@ -182,7 +183,7 @@ export const ChatProvider = ({ children }) => {
         // update the last message of the chat if it was the edited one
         updateLastMessageOfCurrentChat(res.data.chat, res.data);
       },
-      alert
+      toast.error
     );
   };
 

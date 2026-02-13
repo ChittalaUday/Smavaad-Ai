@@ -11,6 +11,7 @@ import { useConnectWebRtc } from "../context/WebRtcContext";
 import IncomingCall from "../components/IncomingCall";
 import AIChat from "./AIChat";
 import AudioPdfSection from "../components/AudioPdfSection";
+import MeetingSidebar from "../components/MeetingSidebar";
 
 export default function Chat() {
   const {
@@ -46,6 +47,10 @@ export default function Chat() {
           ) : activeLeftSidebar === "aiChat" ? (
             <div className="w-full h-full">
               <AIChat />
+            </div>
+          ) : activeLeftSidebar === "meeting" ? (
+            <div className="w-full h-full">
+              <MeetingSidebar />
             </div>
           ) : (
             <>

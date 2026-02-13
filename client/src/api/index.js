@@ -3,7 +3,7 @@ import { LocalStorage } from "../utils";
 // import FormData from "form-data";
 
 // Axios instance for API requests
-const apiClient = axios.create({
+export const apiClient = axios.create({
   baseURL: import.meta.env.VITE_SERVER_URL,
   withCredentials: true,
   timeout: 120000,
@@ -163,6 +163,19 @@ export const streamChatWithAI = async (
   } catch (error) {
     if (onError) onError(error);
   }
+};
+
+// Meeting APIs
+export const createMeeting = () => {
+  return apiClient.post("/api/meetings");
+};
+
+export const validateMeeting = (meetingId) => {
+  return apiClient.get(`/api/meetings/${meetingId}`);
+};
+
+export const joinMeeting = (meetingId) => {
+  return apiClient.post(`/api/meetings/${meetingId}/join`);
 };
 
 export default apiClient;
