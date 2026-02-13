@@ -27,7 +27,7 @@ export abstract class ApiError extends Error {
   constructor(
     public type: ErrorType,
     public message: string = "error",
-    public stack = ""
+    public stack = "",
   ) {
     super(type);
     if (stack) {
@@ -122,5 +122,11 @@ export class NotFoundError extends ApiError {
 export class AccessTokenError extends ApiError {
   constructor(message: string = "Access Token Error") {
     super(ErrorType.ACCESS_TOKEN, message);
+  }
+}
+
+export class ForbiddenError extends ApiError {
+  constructor(message: string = "Forbidden") {
+    super(ErrorType.FORBIDDEN, message);
   }
 }

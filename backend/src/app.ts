@@ -85,7 +85,12 @@ app.use("/api", aiChatRoutes);
 
 // pdf Routes
 import pdfRoutes from "./routes/pdf.routes";
+import meetingRoutes from "./routes/meeting.routes";
+import friendRequestRouter from "./routes/friendRequest.routes";
+
+app.use("/api/meetings", meetingRoutes);
 app.use("/api/pdf", pdfRoutes);
+app.use("/api/friends", friendRequestRouter);
 
 // create a static route to serve static images
 app.use("/public", express.static(path.join(__dirname, "..", "public")));
