@@ -15,7 +15,7 @@ import {
   PiDownloadSimpleBold,
   RxCross2,
 } from "../assets";
-import { BsMagic } from "react-icons/bs";
+import { BsMagic, BsRobot } from "react-icons/bs";
 import { useChat } from "../context/ChatContext";
 import { useAuth } from "../context/AuthContext";
 import moment from "moment";
@@ -26,7 +26,8 @@ import { useConnectWebRtc } from "../context/WebRtcContext";
 import { useMeeting } from "../context/MeetingContext";
 import ViewImage from "./ViewImage";
 import Avatar from "react-avatar";
-import { summarizeChat } from "../api";
+import { summarizeChat, chatWithConversation } from "../api";
+import AIChatModal from "./AIChatModal";
 
 const MessageCont = ({ isOwnMessage, isGroupChat, message }) => {
   const { deleteChatMessage } = useChat();
@@ -255,6 +256,8 @@ const SummaryModal = ({ isOpen, onClose, summary, isLoading }) => {
   );
 };
 
+
+
 export default function ChatsSection() {
   const {
     messages,
@@ -273,6 +276,7 @@ export default function ChatsSection() {
   const [showSummary, setShowSummary] = useState(false);
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [summaryContent, setSummaryContent] = useState("");
+  const [showAIChat, setShowAIChat] = useState(false); // State for AI Chat Modal
 
   const opponentParticipant = getOpponentParticipant(
     currentSelectedChat.current?.participants,
@@ -331,6 +335,12 @@ export default function ChatsSection() {
         summary={summaryContent}
         isLoading={summaryLoading}
       />
+      <AIChatModal
+        isOpen={showAIChat}
+        onClose={() => setShowAIChat(false)}
+        checkId={currentSelectedChat.current?._id}
+        chatFunction={chatWithConversation}
+      />
       <div className="flex w-full items-center justify-between p-5 md:p-4 shadow-md md:shadow-xl ">
         <div className="flex gap-3 items-center ">
           <div onClick={() => setIsChatSelected(false)}>
@@ -384,6 +394,9 @@ export default function ChatsSection() {
         </div>
 
         <div className="text-xl flex gap-5 text-slate-800 dark:text-slate-100 ">
+          <div className="cursor-pointer" title="Ask AI" onClick={() => setShowAIChat(true)}>
+            <BsRobot />
+          </div>
           <div className="cursor-pointer" title="Summarize Chat" onClick={handleSummarize}>
             <BsMagic />
           </div>

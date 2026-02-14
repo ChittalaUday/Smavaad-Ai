@@ -176,6 +176,73 @@ export const streamChatWithAI = async (
   }
 };
 
+// stream chat with AI about conversation
+export const chatWithConversation = async (
+  chatId,
+  prompt,
+  onChunk,
+  onComplete,
+  onError,
+) => {
+  try {
+    const token = LocalStorage.get("token");
+    const baseUrl = import.meta.env.VITE_SERVER_URL;
+    const url = `${baseUrl.endsWith("/") ? baseUrl : baseUrl + "/"}api/messages/ai/${chatId}`;
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ prompt }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder("utf-8");
+    let buffer = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+
+      // Keep the last partial line in the buffer
+      buffer = lines.pop();
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed || !trimmed.startsWith("data: ")) continue;
+
+        const dataStr = trimmed.replace("data: ", "");
+        if (dataStr === "[DONE]") {
+          if (onComplete) onComplete();
+          return;
+        }
+
+        try {
+          const parsed = JSON.parse(dataStr);
+          if (parsed.content) {
+            onChunk(parsed.content);
+          }
+        } catch (e) {
+          console.error("Error parsing message JSON:", e, dataStr);
+        }
+      }
+    }
+
+    if (onComplete) onComplete();
+  } catch (error) {
+    if (onError) onError(error);
+  }
+};
+
 // Meeting APIs
 export const createMeeting = () => {
   return apiClient.post("/api/meetings");
@@ -262,6 +329,71 @@ export const saveMeetingAudio = (meetingId, audioBlob) => {
   return apiClient.post(`/api/meetings/${meetingId}/audio`, formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });
+};
+
+export const chatWithMeeting = async (
+  meetingId,
+  prompt,
+  onChunk,
+  onComplete,
+  onError,
+) => {
+  try {
+    const token = LocalStorage.get("token");
+    const baseUrl = import.meta.env.VITE_SERVER_URL;
+    const url = `${baseUrl.endsWith("/") ? baseUrl : baseUrl + "/"}api/meetings/${meetingId}/ai`;
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ prompt }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder("utf-8");
+    let buffer = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+
+      buffer = lines.pop(); // Keep the last partial line
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed || !trimmed.startsWith("data: ")) continue;
+
+        const dataStr = trimmed.replace("data: ", "");
+        if (dataStr === "[DONE]") {
+          if (onComplete) onComplete();
+          return;
+        }
+
+        try {
+          const parsed = JSON.parse(dataStr);
+          if (parsed.content) {
+            onChunk(parsed.content);
+          }
+        } catch (e) {
+          console.error("Error parsing message JSON:", e, dataStr);
+        }
+      }
+    }
+
+    if (onComplete) onComplete();
+  } catch (error) {
+    if (onError) onError(error);
+  }
 };
 
 export default apiClient;
