@@ -2,6 +2,95 @@ import PDFDocument from "pdfkit";
 import { Segment } from "./ai.service";
 
 export class PDFService {
+  static async generateMeetingReport(
+    summary: string,
+    actionItems: any[],
+    keyTopics: string[],
+  ): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const doc = new PDFDocument({ margin: 50 });
+      const buffers: any[] = [];
+
+      doc.on("data", (buffer) => buffers.push(buffer));
+      doc.on("end", () => {
+        const pdfData = Buffer.concat(buffers);
+        resolve(pdfData.toString("base64"));
+      });
+      doc.on("error", (err) => reject(err));
+
+      // Header
+      doc
+        .fontSize(24)
+        .font("Helvetica-Bold")
+        .text("Meeting Summary Report", { align: "center" });
+      doc.moveDown(0.5);
+      doc
+        .fontSize(10)
+        .font("Helvetica")
+        .fillColor("grey")
+        .text(`Generated on ${new Date().toLocaleString()}`, {
+          align: "center",
+        });
+      doc.moveDown(2);
+
+      // Summary
+      if (summary) {
+        doc
+          .fontSize(16)
+          .font("Helvetica-Bold")
+          .fillColor("black")
+          .text("Summary");
+        doc.rect(50, doc.y, 500, 1).fill("#EEEEEE");
+        doc.moveDown(0.5);
+        doc
+          .fontSize(12)
+          .font("Helvetica")
+          .fillColor("#333333")
+          .text(summary, { align: "justify", lineGap: 2 });
+        doc.moveDown(2);
+      }
+
+      // Key Topics
+      if (keyTopics && keyTopics.length > 0) {
+        doc
+          .fontSize(16)
+          .font("Helvetica-Bold")
+          .fillColor("black")
+          .text("Key Topics");
+        doc.rect(50, doc.y, 500, 1).fill("#EEEEEE");
+        doc.moveDown(0.5);
+
+        keyTopics.forEach((topic) => {
+          doc.fontSize(12).font("Helvetica").text(`• ${topic}`, { indent: 20 });
+        });
+        doc.moveDown(2);
+      }
+
+      // Action Items
+      if (actionItems && actionItems.length > 0) {
+        doc
+          .fontSize(16)
+          .font("Helvetica-Bold")
+          .fillColor("black")
+          .text("Action Items");
+        doc.rect(50, doc.y, 500, 1).fill("#EEEEEE");
+        doc.moveDown(0.5);
+
+        actionItems.forEach((item, idx) => {
+          const task =
+            typeof item === "string" ? item : item.task || JSON.stringify(item);
+          doc
+            .fontSize(12)
+            .font("Helvetica")
+            .text(`${idx + 1}. ${task}`, { indent: 20 });
+        });
+        doc.moveDown(2);
+      }
+
+      doc.end();
+    });
+  }
+
   static async generateMeetingReportPDF(
     meeting: any,
     segments: Segment[],

@@ -1,3 +1,4 @@
+import fs from "fs";
 import Groq from "groq-sdk";
 import { groqConfig } from "../config";
 
@@ -279,5 +280,65 @@ export class GroqService {
         throw new Error(`Failed to parse JSON response from LLM (${model})`);
       }
     }, requestedModel);
+  }
+
+  /**
+   * Transcribes audio using Groq's Whisper model.
+   */
+  static async transcribeAudio(filePath: string): Promise<any[]> {
+    console.log("GroqService.transcribeAudio called with path:", filePath);
+
+    if (!fs.existsSync(filePath)) {
+      throw new Error(`File not found at path: ${filePath}`);
+    }
+
+    const stats = fs.statSync(filePath);
+    console.log("FILE SIZE:", stats.size);
+
+    if (stats.size === 0) {
+      throw new Error("Uploaded file is empty");
+    }
+
+    try {
+      // ✅ Read file into buffer
+      const buffer = fs.readFileSync(filePath);
+
+      // ✅ Create a File object manually (this avoids Groq SDK fd bug)
+      const file = new File(
+        [buffer as any],
+        filePath.split("\\").pop() || "audio.mp3",
+        { type: "audio/mpeg" },
+      );
+
+      const transcription = await groq.audio.transcriptions.create({
+        file,
+        model: "whisper-large-v3",
+        temperature: 0,
+        response_format: "verbose_json",
+      });
+
+      // @ts-ignore
+      if (transcription.segments) {
+        // @ts-ignore
+        return transcription.segments.map((seg: any) => ({
+          start: seg.start,
+          end: seg.end,
+          speaker: "Speaker",
+          text: seg.text.trim(),
+        }));
+      }
+
+      return [
+        {
+          start: 0,
+          end: (transcription as any).duration || 0,
+          speaker: "Speaker",
+          text: transcription.text.trim(),
+        },
+      ];
+    } catch (error) {
+      console.error("Groq Transcription Error:", error);
+      throw error;
+    }
   }
 }

@@ -6,6 +6,7 @@ import { InternalError } from "../core/ApiError";
 import { Readable } from "stream";
 import ollama from "ollama";
 import { GroqService } from "./groq.service";
+import { PDFService } from "./pdf.service";
 
 export interface Segment {
   start: number;
@@ -39,26 +40,77 @@ export interface ChatMessage {
 
 export class AIService {
   static async transcribeAudio(filePath: string): Promise<Segment[]> {
-    try {
-      const form = new FormData();
-      form.append("file", fs.createReadStream(filePath));
+    const primaryInfo =
+      aiConfig.primaryProvider === "groq" ? "Groq" : "Default (Python)";
+    console.log(`Using primary Transcription provider: ${primaryInfo}`);
 
-      const response = await axios.post<TranscribeResponse>(
-        `${aiServiceUrl}/transcribe`,
-        form,
-        {
-          headers: {
-            ...form.getHeaders(),
+    if (aiConfig.primaryProvider === "groq") {
+      try {
+        return await GroqService.transcribeAudio(filePath);
+      } catch (error) {
+        console.error(
+          "Groq Transcription Failed, falling back to default:",
+          error,
+        );
+        // Fallback to default (Python service)
+        try {
+          const form = new FormData();
+          form.append("file", fs.createReadStream(filePath));
+
+          const response = await axios.post<TranscribeResponse>(
+            `${aiServiceUrl}/transcribe`,
+            form,
+            {
+              headers: {
+                ...form.getHeaders(),
+              },
+              maxContentLength: Infinity,
+              maxBodyLength: Infinity,
+            },
+          );
+
+          return response.data.segments;
+        } catch (defaultError) {
+          console.error("Default Transcription Failed:", defaultError);
+          throw new InternalError(
+            "Failed to transcribe audio (Both providers failed)",
+          );
+        }
+      }
+    } else {
+      // Default (Python) primary
+      try {
+        const form = new FormData();
+        form.append("file", fs.createReadStream(filePath));
+
+        const response = await axios.post<TranscribeResponse>(
+          `${aiServiceUrl}/transcribe`,
+          form,
+          {
+            headers: {
+              ...form.getHeaders(),
+            },
+            maxContentLength: Infinity,
+            maxBodyLength: Infinity,
           },
-          maxContentLength: Infinity,
-          maxBodyLength: Infinity,
-        },
-      );
+        );
 
-      return response.data.segments;
-    } catch (error) {
-      console.error("AI Service Error:", error);
-      throw new InternalError("Failed to transcribe audio");
+        return response.data.segments;
+      } catch (error) {
+        console.error(
+          "Default Transcription Failed, falling back to Groq:",
+          error,
+        );
+        // Fallback to Groq
+        try {
+          return await GroqService.transcribeAudio(filePath);
+        } catch (groqError) {
+          console.error("Groq Fallback Transcription Failed:", groqError);
+          throw new InternalError(
+            "Failed to transcribe audio (Both providers failed)",
+          );
+        }
+      }
     }
   }
   static async streamChatWithAI(messages: ChatMessage[]) {
@@ -173,11 +225,13 @@ export class AIService {
     keyTopics: string[],
   ): Promise<string> {
     try {
-      const response = await axios.post<{ pdf_report: string }>(
-        `${aiServiceUrl}/api/generate-pdf`,
-        { summary, action_items: actionItems, key_topics: keyTopics },
+      // Use local PDFService instead of external Python service
+      const pdfBase64 = await PDFService.generateMeetingReport(
+        summary,
+        actionItems,
+        keyTopics,
       );
-      return response.data.pdf_report;
+      return pdfBase64;
     } catch (error) {
       console.error("AI Service PDF Error:", error);
       throw new InternalError("Failed to generate PDF");
