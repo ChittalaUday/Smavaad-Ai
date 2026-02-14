@@ -1,8 +1,18 @@
 import React, { useState, useContext } from "react";
 import { LuUser, PiChats, RiUserSearchLine, logo } from "../assets";
-import { FaFilePdf } from "react-icons/fa";
-import { RiRobot2Line, RiVideoAddLine } from "react-icons/ri";
-import { FiLogOut, FiSettings, FiMoon, FiSun, FiUser, FiCheck } from "react-icons/fi";
+import {
+    MessagesSquare,
+    Video,
+    Bot,
+    Search,
+    FileText,
+    LogOut,
+    Moon,
+    Sun,
+    User
+} from "lucide-react";
+
+
 import { useAuth } from "../context/AuthContext";
 import OutsideClickHandler from "react-outside-click-handler";
 import Avatar from "react-avatar";
@@ -33,7 +43,6 @@ const NavItem = ({ Icon, name, active, onClick, tooltip }) => (
         )}
 
         {/* Tooltip */}
-        {/* Tooltip */}
         <div className="absolute left-14 ml-4 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-slate-800 text-white text-xs font-medium rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-200 z-[60] whitespace-nowrap shadow-xl translate-x-2 group-hover:translate-x-0">
             {tooltip}
         </div>
@@ -47,7 +56,7 @@ const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message }) => {
             <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-sm border border-slate-200 dark:border-white/10 overflow-hidden animate-scale-up">
                 <div className="p-6 text-center">
                     <div className="w-12 h-12 bg-red-100 dark:bg-red-900/20 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <FiLogOut size={24} />
+                        <LogOut size={24} />
                     </div>
                     <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">{title}</h3>
                     <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">{message}</p>
@@ -86,12 +95,13 @@ export default function UnifiedSidebar({ activeLeftSidebar, setActiveLeftSidebar
     const [showLogoutModal, setShowLogoutModal] = useState(false);
 
     const navItems = [
-        { Icon: PiChats, name: "recentChats", label: "Chats" },
-        { Icon: RiVideoAddLine, name: "meeting", label: "Meetings" },
-        { Icon: RiRobot2Line, name: "aiChat", label: "AI Assistant" },
-        { Icon: RiUserSearchLine, name: "searchUser", label: "Search" },
-        { Icon: FaFilePdf, name: "audioPdf", label: "Files" },
+        { Icon: MessagesSquare, name: "recentChats", label: "Chats" },
+        { Icon: Video, name: "meeting", label: "Meetings" },
+        { Icon: Bot, name: "aiChat", label: "AI Assistant" },
+        { Icon: Search, name: "searchUser", label: "Search" },
+        { Icon: FileText, name: "audioPdf", label: "Audio to PDF" },
     ];
+
 
     const handleLogoutConfirm = () => {
         logout();
@@ -164,14 +174,14 @@ export default function UnifiedSidebar({ activeLeftSidebar, setActiveLeftSidebar
                                                     onClick={() => { setActiveLeftSidebar('profile'); setShowProfileMenu(false); }}
                                                     className="flex items-center gap-3 px-3 py-2 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 rounded-xl transition-colors text-left"
                                                 >
-                                                    <FiUser size={16} /> View Profile
+                                                    <User size={16} /> View Profile
                                                 </button>
                                                 <button
                                                     onClick={() => { handleThemeToggle(); }}
                                                     className="flex items-center gap-3 px-3 py-2 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 rounded-xl transition-colors text-left justify-between"
                                                 >
                                                     <div className="flex items-center gap-3">
-                                                        {isDark ? <FiMoon size={16} /> : <FiSun size={16} />}
+                                                        {isDark ? <Moon size={16} /> : <Sun size={16} />}
                                                         <span>Theme</span>
                                                     </div>
                                                     <span className="text-[10px] bg-slate-200 dark:bg-slate-700 px-1.5 py-0.5 rounded uppercase font-bold">{isDark ? 'Dark' : 'Light'}</span>
@@ -181,7 +191,7 @@ export default function UnifiedSidebar({ activeLeftSidebar, setActiveLeftSidebar
                                                     onClick={() => setShowLogoutModal(true)}
                                                     className="flex items-center gap-3 px-3 py-2 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-xl transition-colors text-left font-medium"
                                                 >
-                                                    <FiLogOut size={16} /> Log Out
+                                                    <LogOut size={16} /> Log Out
                                                 </button>
                                             </div>
                                         </div>
@@ -207,10 +217,10 @@ export default function UnifiedSidebar({ activeLeftSidebar, setActiveLeftSidebar
                     {["aiChat", "audioPdf"].includes(activeLeftSidebar) && (
                         <div className="p-6 h-full flex flex-col items-center justify-center text-center opacity-40">
                             <div className="w-16 h-16 bg-gradient-to-tr from-slate-200 to-slate-100 dark:from-white/10 dark:to-white/5 rounded-2xl mb-4 flex items-center justify-center">
-                                {activeLeftSidebar === 'aiChat' ? <RiRobot2Line size={32} /> : <FaFilePdf size={28} />}
+                                {activeLeftSidebar === 'aiChat' ? <Bot size={32} /> : <FileText size={28} />}
                             </div>
                             <h2 className="text-xl font-bold text-slate-800 dark:text-white capitalize mb-1">
-                                {activeLeftSidebar === 'aiChat' ? 'AI Assistant' : 'Files'}
+                                {activeLeftSidebar === 'aiChat' ? 'AI Assistant' : 'Audio to PDF'}
                             </h2>
                             <p className="text-sm">Select a context to begin</p>
                         </div>

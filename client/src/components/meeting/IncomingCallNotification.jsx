@@ -1,6 +1,7 @@
 import React from 'react';
 import { useMeeting } from '../../context/MeetingContext';
 import { FaPhone, FaPhoneSlash } from 'react-icons/fa';
+import Avatar from "react-avatar";
 
 const IncomingCallNotification = () => {
     const { incomingCall, acceptCall, rejectCall } = useMeeting();
@@ -13,10 +14,12 @@ const IncomingCallNotification = () => {
         <div className="fixed top-4 right-4 z-50 bg-gray-900 border border-gray-700 shadow-2xl rounded-xl p-4 w-80 animate-slide-in">
             <div className="flex items-center gap-4 mb-4">
                 <div className="relative">
-                    <img
-                        src={caller?.avatarUrl || "https://via.placeholder.com/50"}
-                        alt={caller?.username}
-                        className="w-12 h-12 rounded-full object-cover border-2 border-primary"
+                    <Avatar
+                        name={caller?.username || "Unknown"}
+                        src={caller?.avatarUrl}
+                        size="50"
+                        round={true}
+                        className="border-2 border-primary"
                     />
                     <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-gray-900"></div>
                 </div>

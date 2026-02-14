@@ -4,13 +4,14 @@ import { createMeeting, getMyMeetings } from "../api";
 import { useAuth } from "../context/AuthContext";
 import { format, formatDistanceStrict } from "date-fns";
 import {
-    FiVideo,
-    FiClock,
-    FiUsers,
-    FiPlus,
-    FiSearch,
-    FiFileText,
-} from "react-icons/fi";
+    Video,
+    Clock,
+    Users,
+    Plus,
+    Search,
+    FileText,
+} from "lucide-react";
+import Avatar from "react-avatar";
 import { toast } from "react-toastify";
 
 export default function MeetingSidebar({ onSelectMeeting, selectedMeetingId }) {
@@ -99,42 +100,45 @@ export default function MeetingSidebar({ onSelectMeeting, selectedMeetingId }) {
                         disabled={creating}
                         className="flex items-center gap-1.5 bg-primary hover:bg-primary/90 text-white px-3 py-1.5 rounded-xl text-xs font-medium transition-all shadow-lg shadow-primary/25 disabled:opacity-50"
                     >
-                        <FiPlus size={14} />
+                        <Plus size={14} />
                         New
                     </button>
                 </div>
 
-                {/* Join with code */}
-                <form onSubmit={joinMeeting} className="flex gap-2 mb-4">
-                    <input
-                        type="text"
-                        required
-                        className="flex-1 px-3 py-2 border border-slate-200 dark:border-white/10 rounded-xl bg-white/50 dark:bg-black/20 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/20 placeholder:text-slate-400 backdrop-blur-sm transition-all"
-                        placeholder="Enter meeting code..."
-                        value={meetingCode}
-                        onChange={(e) => setMeetingCode(e.target.value)}
-                    />
-                    <button
-                        type="submit"
-                        disabled={!meetingCode.trim()}
-                        className="px-4 py-2 rounded-xl text-white text-sm font-medium bg-slate-800 hover:bg-slate-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed shadow-md"
-                    >
-                        Join
-                    </button>
-                </form>
+                {/* Join with code + Search Combined Area */}
+                <div className="flex flex-col gap-3 mb-6">
+                    {/* Join Input Group */}
+                    <form onSubmit={joinMeeting} className="relative group">
+                        <input
+                            type="text"
+                            required
+                            className="w-full pl-4 pr-20 py-3 bg-white/50 dark:bg-slate-900/40 backdrop-blur-md border border-slate-200 dark:border-white/10 rounded-2xl text-sm text-slate-800 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500/50 transition-all shadow-sm"
+                            placeholder="Enter meeting code..."
+                            value={meetingCode}
+                            onChange={(e) => setMeetingCode(e.target.value)}
+                        />
+                        <button
+                            type="submit"
+                            disabled={!meetingCode.trim()}
+                            className="absolute right-1.5 top-1.5 bottom-1.5 px-4 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 dark:disabled:bg-slate-700 text-white text-xs font-bold rounded-xl transition-all shadow-md disabled:shadow-none"
+                        >
+                            Join
+                        </button>
+                    </form>
 
-                {/* Search */}
-                <div className="relative group mb-4">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 group-focus-within:text-primary transition-colors">
-                        <FiSearch size={16} />
+                    {/* Search Input */}
+                    <div className="relative group">
+                        <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                            <Search size={16} />
+                        </div>
+                        <input
+                            type="text"
+                            placeholder="Search meetings..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full pl-10 pr-4 py-2.5 bg-white/30 dark:bg-slate-900/20 backdrop-blur-sm border border-slate-200/60 dark:border-white/5 rounded-xl text-sm text-slate-800 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                        />
                     </div>
-                    <input
-                        type="text"
-                        placeholder="Search meetings..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white/50 dark:bg-black/20 backdrop-blur-md border border-slate-200 dark:border-white/10 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none text-slate-800 dark:text-slate-100 placeholder:text-slate-400 font-medium shadow-sm"
-                    />
                 </div>
 
                 {/* Filter pills */}
@@ -163,7 +167,7 @@ export default function MeetingSidebar({ onSelectMeeting, selectedMeetingId }) {
                     </div>
                 ) : filtered.length === 0 ? (
                     <div className="text-center py-12 opacity-50">
-                        <FiVideo className="mx-auto text-slate-400 mb-2" size={24} />
+                        <Video className="mx-auto text-slate-400 mb-2" size={24} />
                         <p className="text-slate-500 text-xs">No meetings found</p>
                     </div>
                 ) : (
@@ -175,44 +179,74 @@ export default function MeetingSidebar({ onSelectMeeting, selectedMeetingId }) {
                         const isActive = selectedMeetingId === meeting.meetingId;
 
                         return (
-                            <button
-                                key={meeting._id}
-                                onClick={() => onSelectMeeting && onSelectMeeting(meeting.meetingId)}
-                                className={`w-full text-left rounded-xl p-3 transition-all duration-200 group border
+                            <div key={meeting._id} className="group relative">
+                                <button
+                                    onClick={() => onSelectMeeting && onSelectMeeting(meeting.meetingId)}
+                                    className={`w-full text-left rounded-2xl p-4 transition-all duration-300 border relative overflow-hidden
                                     ${isActive
-                                        ? "bg-white/20 dark:bg-white/10 border-white/20 shadow-lg backdrop-blur-md"
-                                        : "bg-transparent border-transparent hover:bg-white/10 dark:hover:bg-white/5 hover:border-white/10"
-                                    }
+                                            ? "bg-white dark:bg-slate-800 border-indigo-500/30 shadow-lg shadow-indigo-500/10 z-10 scale-[1.02]"
+                                            : "bg-white/40 dark:bg-slate-900/20 border-transparent hover:bg-white/60 dark:hover:bg-slate-800/40 hover:border-slate-200 dark:hover:border-slate-700 hover:shadow-md"
+                                        }
                                 `}
-                            >
-                                {/* Top row */}
-                                <div className="flex items-center gap-2 mb-1.5">
-                                    <div className={`w-2 h-2 rounded-full ${isLive ? "bg-green-500 animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]" : "bg-slate-400/50"}`} />
-                                    <span className={`text-[13px] font-semibold truncate transition-colors ${isActive ? "text-slate-900 dark:text-white" : "text-slate-700 dark:text-slate-300"}`}>
-                                        {meeting.type === "call" ? "Call" : "Meeting"}
-                                    </span>
-                                    <span className="text-[10px] text-slate-400 font-mono ml-auto opacity-70">
-                                        {format(new Date(meeting.createdAt), "MMM d")}
-                                    </span>
-                                </div>
+                                >
+                                    {/* Active Indicator Strip */}
+                                    {isActive && <div className="absolute left-0 top-0 bottom-0 w-1 bg-indigo-500" />}
 
-                                {/* Meta */}
-                                <div className="flex items-center justify-between text-[11px] text-slate-400 mt-2">
-                                    <div className="flex items-center gap-2">
-                                        <div className="flex -space-x-1.5">
+                                    {/* Top row */}
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <div className={`w-2 h-2 rounded-full ${isLive ? "bg-green-500 animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]" : "bg-slate-300 dark:bg-slate-600"}`} />
+                                        <span className={`text-xs font-bold uppercase tracking-wide ${isActive ? "text-indigo-600 dark:text-indigo-400" : "text-slate-500 dark:text-slate-400"}`}>
+                                            {meeting.type === "call" ? "Call Recording" : "Meeting"}
+                                        </span>
+                                        <span className="text-[10px] text-slate-400 font-medium ml-auto">
+                                            {format(new Date(meeting.createdAt), "MMM d")}
+                                        </span>
+                                    </div>
+
+                                    {/* ID/Title (simulated) */}
+                                    <h4 className={`text-sm font-bold truncate mb-3 ${isActive ? "text-slate-900 dark:text-white" : "text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white transition-colors"}`}>
+                                        {meeting.meetingId}
+                                    </h4>
+
+                                    {/* Meta & Footer */}
+                                    <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-100 dark:border-white/5">
+                                        <div className="flex -space-x-2 items-center">
                                             {meeting.participants?.slice(0, 3).map((p, i) => (
-                                                <img
+                                                <Avatar
                                                     key={p._id || i}
-                                                    src={p.user?.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(p.user?.username || "U")}`}
-                                                    className="w-4 h-4 rounded-full border border-white dark:border-slate-800"
+                                                    name={p.user?.username || "U"}
+                                                    src={p.user?.avatarUrl}
+                                                    size="20"
+                                                    round={true}
+                                                    className="border-2 border-white dark:border-slate-800"
+                                                    title={p.user?.username}
                                                 />
                                             ))}
+                                            {participantCount > 3 && (
+                                                <div className="w-5 h-5 rounded-full border-2 border-white dark:border-slate-800 bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-[8px] font-bold text-slate-500 z-10">
+                                                    +{participantCount - 3}
+                                                </div>
+                                            )}
                                         </div>
-                                        {participantCount > 0 && <span>{participantCount}</span>}
+
+                                        <div className="flex items-center gap-2">
+                                            {hasSummary && (
+                                                <span className="flex items-center gap-1 text-[10px] bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 px-1.5 py-0.5 rounded-md">
+                                                    <FileText size={10} /> AI
+                                                </span>
+                                            )}
+                                            <span className="text-[10px] text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded-md">
+                                                {getDuration(meeting)}
+                                            </span>
+                                        </div>
                                     </div>
-                                    {hasSummary && <FiFileText className="text-primary" size={12} />}
-                                </div>
-                            </button>
+                                </button>
+                                {/* Separator (only if not last) */}
+                                {/* We can use space-y on parent, or just margin-bottom, but user asked for divider. 
+                                    However, distinct "Card" style often replaces the need for a line divider. 
+                                    I'll stick to nice cards with gaps.
+                                */}
+                            </div>
                         );
                     })
                 )}

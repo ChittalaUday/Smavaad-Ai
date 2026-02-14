@@ -55,12 +55,14 @@ export default function Chat() {
         );
       case "audioPdf":
         return (
-          <div className="h-full flex flex-col">
-            <MobileHeader title="Files" onBack={() => {
+          <div className="h-full w-full flex flex-col relative">
+            <MobileHeader title="Audio to PDF" onBack={() => {
               setActiveLeftSidebar("recentChats");
               setIsChatSelected(false);
             }} />
-            <AudioPdfSection />
+            <div className="flex-1 w-full relative h-full">
+              <AudioPdfSection />
+            </div>
           </div>
         );
       case "meeting":

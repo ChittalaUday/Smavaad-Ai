@@ -4,6 +4,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useChat } from "../../context/ChatContext";
 import apiClient from "../../api";
 import { toast } from "react-toastify";
+import Avatar from "react-avatar";
 
 const ParticipantList = ({ onClose }) => {
     const { participants, activeMeeting } = useMeeting();
@@ -69,10 +70,12 @@ const ParticipantList = ({ onClose }) => {
                     return (
                         <div key={p.userId || p.socketId} className="flex items-center justify-between bg-gray-800 p-3 rounded-lg hover:bg-gray-750 transition-colors">
                             <div className="flex items-center gap-3">
-                                <img
-                                    src={p.avatarUrl || "https://via.placeholder.com/40"}
-                                    className="w-10 h-10 rounded-full object-cover border border-gray-600"
-                                    alt={p.username}
+                                <Avatar
+                                    name={p.username || "Unknown"}
+                                    src={p.avatarUrl}
+                                    size="40"
+                                    round={true}
+                                    className="border border-gray-600"
                                 />
                                 <div className="overflow-hidden">
                                     <p className="font-medium truncate max-w-[120px]" title={p.username}>

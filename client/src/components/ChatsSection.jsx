@@ -55,7 +55,7 @@ const MessageCont = ({ isOwnMessage, message }) => {
   };
 
   return (
-    <div className={`flex w-full mb-6 ${isOwnMessage ? "justify-end" : "justify-start"}`}>
+    <div className={`flex w-full mb-4 ${isOwnMessage ? "justify-end" : "justify-start"}`}>
       <div className={`flex max-w-[85%] md:max-w-[70%] ${isOwnMessage ? "flex-row-reverse" : "flex-row"} gap-3 group`}>
 
         {/* Avatar for opponent */}
@@ -228,44 +228,63 @@ export default function ChatsSection() {
       <SummaryModal isOpen={showSummary} onClose={() => setShowSummary(false)} summary={summaryContent} isLoading={summaryLoading} />
       <AIChatModal isOpen={showAIChat} onClose={() => setShowAIChat(false)} checkId={currentSelectedChat.current?._id} chatFunction={chatWithConversation} />
 
-      {/* 1. Glass Header */}
-      <div className="flex items-center justify-between p-4 border-b border-white/10 bg-white/40 dark:bg-black/20 backdrop-blur-md z-10 absolute top-0 w-full rounded-t-3xl text-sm md:text-base">
-        <div className="flex items-center gap-3">
-          <button onClick={() => setIsChatSelected(false)} className="md:hidden p-2 hover:bg-white/10 rounded-full"><MdArrowBackIos /></button>
+      {/* 1. Header (Updated to match AIChat style) */}
+      <div className="absolute top-0 w-full z-10 p-4">
+        <div className="flex items-center justify-between px-6 py-3 bg-white/40 dark:bg-slate-900/40 backdrop-blur-xl border border-white/20 dark:border-white/5 rounded-2xl shadow-lg">
 
-          {currentSelectedChat.current.isGroupChat ? (
-            <div className="flex -space-x-3">
-              {currentSelectedChat.current.participants.slice(0, 3).map(p => (
-                <Avatar key={p._id} name={p.username} src={p.avatarUrl} size="36" round={true} className="border-2 border-white dark:border-slate-800 shadow-sm" />
-              ))}
-            </div>
-          ) : (
-            <div className="relative">
-              <Avatar name={opponent?.username} src={opponent?.avatarUrl} size="40" round={true} className="shadow-md" />
-              <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></span>
-            </div>
-          )}
+          {/* Left Side: Back + Avatar + Name */}
+          <div className="flex items-center gap-4">
+            <button onClick={() => setIsChatSelected(false)} className="md:hidden p-2 hover:bg-white/10 rounded-full transition-colors -ml-2">
+              <MdArrowBackIos className="text-slate-600 dark:text-slate-300" />
+            </button>
 
-          <div className="flex flex-col">
-            <h2 className="font-bold text-slate-800 dark:text-white text-lg leading-tight">
-              {currentSelectedChat.current.isGroupChat ? currentSelectedChat.current.name : opponent?.username}
-            </h2>
-            <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Active now</span>
+            {currentSelectedChat.current.isGroupChat ? (
+              <div className="flex -space-x-3">
+                {currentSelectedChat.current.participants.slice(0, 3).map(p => (
+                  <Avatar key={p._id} name={p.username} src={p.avatarUrl} size="40" round={true} className="border-2 border-white dark:border-slate-800 shadow-sm" />
+                ))}
+              </div>
+            ) : (
+              <div className="relative">
+                <Avatar name={opponent?.username} src={opponent?.avatarUrl} size="42" round={true} className="shadow-md" />
+                <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white dark:border-slate-800 rounded-full"></span>
+              </div>
+            )}
+
+            <div>
+              <h1 className="font-bold text-slate-800 dark:text-white text-lg leading-tight">
+                {currentSelectedChat.current.isGroupChat ? currentSelectedChat.current.name : opponent?.username}
+              </h1>
+              <div className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Active now</span>
+              </div>
+            </div>
           </div>
-        </div>
 
-        <div className="flex items-center gap-2 md:gap-4 text-slate-600 dark:text-slate-300">
-          <button className="p-2 hover:bg-white/20 rounded-full transition-colors" title="Summarize" onClick={toggleSummary}><BsMagic /></button>
-          <button className="p-2 hover:bg-white/20 rounded-full transition-colors" title="AI Chat" onClick={() => setShowAIChat(true)}><BsRobot /></button>
-          <button className="p-2 hover:bg-white/20 rounded-full transition-colors" title="Start Call" onClick={handleCallAction}><IoVideocamOutline /></button>
-          {currentSelectedChat.current?.admin?.toString() === user._id && (
-            <button className="p-2 hover:bg-red-500/10 text-red-500 rounded-full transition-colors" onClick={() => deleteUserChat(currentSelectedChat.current?._id)}><MdDeleteOutline /></button>
-          )}
+          {/* Right Side: Actions */}
+          <div className="flex items-center gap-2 md:gap-3">
+            <button className="p-2.5 bg-white/50 dark:bg-slate-800/50 hover:bg-white/80 dark:hover:bg-slate-700 rounded-xl transition-all shadow-sm text-purple-600 dark:text-purple-400" title="Summarize conversation" onClick={toggleSummary}>
+              <BsMagic size={18} />
+            </button>
+            <button className="p-2.5 bg-white/50 dark:bg-slate-800/50 hover:bg-white/80 dark:hover:bg-slate-700 rounded-xl transition-all shadow-sm text-blue-600 dark:text-blue-400" title="Ask AI" onClick={() => setShowAIChat(true)}>
+              <BsRobot size={18} />
+            </button>
+            <button className="p-2.5 bg-white/50 dark:bg-slate-800/50 hover:bg-white/80 dark:hover:bg-slate-700 rounded-xl transition-all shadow-sm text-slate-700 dark:text-slate-200" title="Start Call" onClick={handleCallAction}>
+              <IoVideocamOutline size={20} />
+            </button>
+            {currentSelectedChat.current?.admin?.toString() === user._id && (
+              <button className="p-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-xl transition-all shadow-sm" title="Delete Chat" onClick={() => deleteUserChat(currentSelectedChat.current?._id)}>
+                <MdDeleteOutline size={20} />
+              </button>
+            )}
+          </div>
+
         </div>
       </div>
 
       {/* 2. Messages Area */}
-      <div className="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-8 pt-24 pb-32 flex flex-col w-full">
+      <div className="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-8 pt-32 pb-32 flex flex-col w-full">
         {loadingMessages ? (
           <div className="h-full flex items-center justify-center"><Loading /></div>
         ) : !messages?.length ? (
