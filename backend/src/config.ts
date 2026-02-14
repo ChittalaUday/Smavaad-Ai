@@ -4,7 +4,8 @@ dotenv.config();
 export const environment = process.env.NODE_ENV;
 export const port = process.env.PORT;
 export const serverUrl = process.env.SERVER_URL?.trim();
-export const aiServiceUrl = process.env.AI_SERVICE_URL || "http://127.0.0.1:8000/api";
+export const aiServiceUrl =
+  process.env.AI_SERVICE_URL || "http://127.0.0.1:8000/api";
 
 export const db = {
   name: process.env.DB_NAME || "",
@@ -25,4 +26,13 @@ export const tokenInfo = {
   refreshTokenValidity: parseInt(process.env.REFRESH_TOKEN_VALIDITY_SEC || "0"),
   issuer: process.env.TOKEN_ISSUER || "",
   audience: process.env.TOKEN_AUDIENCE || "",
+};
+
+export const groqConfig = {
+  apiKey: process.env.GROQ_API_KEY || "",
+  model: process.env.GROQ_MODEL || "llama3-70b-8192", // Default to a good model
+};
+
+export const aiConfig = {
+  primaryProvider: process.env.AI_PRIMARY_PROVIDER || "groq", // "groq" or "ollama"
 };

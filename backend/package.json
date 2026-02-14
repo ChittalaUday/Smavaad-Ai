@@ -49,6 +49,7 @@
     "express-rate-limit": "^7.3.1",
     "express-validator": "^7.0.1",
     "form-data": "^4.0.5",
+    "groq-sdk": "^0.37.0",
     "jsonwebtoken": "^9.0.2",
     "lodash": "^4.17.21",
     "mongoose": "^8.3.2",

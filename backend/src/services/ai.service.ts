@@ -1,10 +1,11 @@
 import axios from "axios";
 import FormData from "form-data";
 import fs from "fs";
-import { aiServiceUrl } from "../config";
+import { aiServiceUrl, aiConfig } from "../config";
 import { InternalError } from "../core/ApiError";
 import { Readable } from "stream";
 import ollama from "ollama";
+import { GroqService } from "./groq.service";
 
 export interface Segment {
   start: number;
@@ -61,31 +62,92 @@ export class AIService {
     }
   }
   static async streamChatWithAI(messages: ChatMessage[]) {
-    try {
-      const response = await ollama.chat({
-        model: "deepseek-r1:7b",
-        messages: messages,
-        stream: true,
-      });
+    const primaryInfo = aiConfig.primaryProvider === "groq" ? "Groq" : "Ollama";
+    console.log(`Using primary AI provider: ${primaryInfo}`);
 
-      return response;
-    } catch (error) {
-      console.error("AI Service Chat Error:", error);
-      throw new InternalError("Failed to initiate chat with AI");
+    if (aiConfig.primaryProvider === "groq") {
+      try {
+        return await GroqService.getChatStream(messages as any);
+      } catch (error) {
+        console.error("Groq Primary Failed, falling back to Ollama:", error);
+        // Fallback to Ollama
+        try {
+          return await ollama.chat({
+            model: "deepseek-r1:7b",
+            messages: messages,
+            stream: true,
+          });
+        } catch (ollamaError) {
+          console.error("Ollama Fallback Failed:", ollamaError);
+          throw new InternalError(
+            "AI Service unavailable (Both Groq and Ollama failed)",
+          );
+        }
+      }
+    } else {
+      // Default to Ollama primary
+      try {
+        return await ollama.chat({
+          model: "deepseek-r1:7b",
+          messages: messages,
+          stream: true,
+        });
+      } catch (error) {
+        console.error("Ollama Primary Failed, falling back to Groq:", error);
+        // Fallback to Groq
+        try {
+          return await GroqService.getChatStream(messages as any);
+        } catch (groqError) {
+          console.error("Groq Fallback Failed:", groqError);
+          throw new InternalError(
+            "AI Service unavailable (Both Ollama and Groq failed)",
+          );
+        }
+      }
     }
   }
 
   static async generateResponse(prompt: string) {
-    try {
-      const response = await ollama.generate({
-        model: "deepseek-r1:7b",
-        prompt: prompt,
-        stream: false,
-      });
-      return response.response;
-    } catch (error) {
-      console.error("AI Service Generate Error:", error);
-      throw new InternalError("Failed to generate AI response");
+    if (aiConfig.primaryProvider === "groq") {
+      try {
+        return await GroqService.getChatCompletion(prompt);
+      } catch (error) {
+        console.error(
+          "Groq Primary Generate Failed, falling back to Ollama:",
+          error,
+        );
+        try {
+          const response = await ollama.generate({
+            model: "deepseek-r1:7b",
+            prompt: prompt,
+            stream: false,
+          });
+          return response.response;
+        } catch (ollamaError) {
+          console.error("Ollama Fallback Generate Failed:", ollamaError);
+          throw new InternalError("AI Service unavailable");
+        }
+      }
+    } else {
+      try {
+        const response = await ollama.generate({
+          model: "deepseek-r1:7b",
+          prompt: prompt,
+          stream: false,
+        });
+        return response.response;
+      } catch (error) {
+        console.error(
+          "Ollama Primary Generate Failed, falling back to Groq:",
+          error,
+        );
+        try {
+          return await GroqService.getChatCompletion(prompt);
+        } catch (groqError) {
+          console.error("Groq Fallback Generate Failed:", groqError);
+          throw new InternalError("AI Service unavailable");
+        }
+      }
     }
   }
 
