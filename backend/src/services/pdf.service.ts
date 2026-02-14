@@ -1,5 +1,15 @@
 import PDFDocument from "pdfkit";
 import { Segment } from "./ai.service";
+import path from "path";
+
+// Helper to detect script and return font name
+const getFontForText = (text: string) => {
+  // Telugu range: \u0C00-\u0C7F
+  if (/[\u0C00-\u0C7F]/.test(text)) return "NotoSansTelugu";
+  // Devanagari range: \u0900-\u097F
+  if (/[\u0900-\u097F]/.test(text)) return "NotoSansDevanagari";
+  return "NotoSans";
+};
 
 export class PDFService {
   static async generateMeetingReport(
@@ -18,15 +28,26 @@ export class PDFService {
       });
       doc.on("error", (err) => reject(err));
 
+      const fontsDir = path.join(__dirname, "..", "assets", "fonts");
+      doc.registerFont("NotoSans", path.join(fontsDir, "NotoSans-Regular.ttf"));
+      doc.registerFont(
+        "NotoSansTelugu",
+        path.join(fontsDir, "NotoSansTelugu-Regular.ttf"),
+      );
+      doc.registerFont(
+        "NotoSansDevanagari",
+        path.join(fontsDir, "NotoSansDevanagari-Regular.ttf"),
+      );
+
       // Header
       doc
         .fontSize(24)
-        .font("Helvetica-Bold")
+        .font("NotoSans") // Use NotoSans instead of Helvetica-Bold
         .text("Meeting Summary Report", { align: "center" });
       doc.moveDown(0.5);
       doc
         .fontSize(10)
-        .font("Helvetica")
+        .font("NotoSans")
         .fillColor("grey")
         .text(`Generated on ${new Date().toLocaleString()}`, {
           align: "center",
@@ -35,16 +56,12 @@ export class PDFService {
 
       // Summary
       if (summary) {
-        doc
-          .fontSize(16)
-          .font("Helvetica-Bold")
-          .fillColor("black")
-          .text("Summary");
+        doc.fontSize(16).font("NotoSans").fillColor("black").text("Summary");
         doc.rect(50, doc.y, 500, 1).fill("#EEEEEE");
         doc.moveDown(0.5);
         doc
           .fontSize(12)
-          .font("Helvetica")
+          .font(getFontForText(summary))
           .fillColor("#333333")
           .text(summary, { align: "justify", lineGap: 2 });
         doc.moveDown(2);
@@ -52,16 +69,15 @@ export class PDFService {
 
       // Key Topics
       if (keyTopics && keyTopics.length > 0) {
-        doc
-          .fontSize(16)
-          .font("Helvetica-Bold")
-          .fillColor("black")
-          .text("Key Topics");
+        doc.fontSize(16).font("NotoSans").fillColor("black").text("Key Topics");
         doc.rect(50, doc.y, 500, 1).fill("#EEEEEE");
         doc.moveDown(0.5);
 
         keyTopics.forEach((topic) => {
-          doc.fontSize(12).font("Helvetica").text(`• ${topic}`, { indent: 20 });
+          doc
+            .fontSize(12)
+            .font(getFontForText(topic))
+            .text(`• ${topic}`, { indent: 20 });
         });
         doc.moveDown(2);
       }
@@ -70,7 +86,7 @@ export class PDFService {
       if (actionItems && actionItems.length > 0) {
         doc
           .fontSize(16)
-          .font("Helvetica-Bold")
+          .font("NotoSans")
           .fillColor("black")
           .text("Action Items");
         doc.rect(50, doc.y, 500, 1).fill("#EEEEEE");
@@ -81,7 +97,7 @@ export class PDFService {
             typeof item === "string" ? item : item.task || JSON.stringify(item);
           doc
             .fontSize(12)
-            .font("Helvetica")
+            .font(getFontForText(task))
             .text(`${idx + 1}. ${task}`, { indent: 20 });
         });
         doc.moveDown(2);
@@ -233,12 +249,27 @@ export class PDFService {
       const doc = new PDFDocument({ margin: 50 });
       const buffers: any[] = [];
 
+      // Register Fonts
+      const fontsDir = path.join(__dirname, "..", "assets", "fonts");
+      doc.registerFont("NotoSans", path.join(fontsDir, "NotoSans-Regular.ttf"));
+      doc.registerFont(
+        "NotoSansTelugu",
+        path.join(fontsDir, "NotoSansTelugu-Regular.ttf"),
+      );
+      doc.registerFont(
+        "NotoSansDevanagari",
+        path.join(fontsDir, "NotoSansDevanagari-Regular.ttf"),
+      );
+
       doc.on("data", (buffer) => buffers.push(buffer));
       doc.on("end", () => resolve(Buffer.concat(buffers)));
       doc.on("error", (err) => reject(err));
 
       // Title
-      doc.fontSize(20).text("Audio Transcription", { align: "center" });
+      doc
+        .fontSize(20)
+        .font("NotoSans")
+        .text("Audio Transcription", { align: "center" });
       doc.moveDown();
       doc.fontSize(12).text(`Generated on ${new Date().toLocaleString()}`, {
         align: "center",
@@ -254,7 +285,7 @@ export class PDFService {
           doc.moveDown(0.5);
           doc
             .fontSize(12)
-            .font("Helvetica-Bold")
+            .font("NotoSans") // Speaker name usually English/Simple
             .text(segment.speaker, { continued: false });
           currentSpeaker = segment.speaker;
         }
@@ -275,10 +306,13 @@ export class PDFService {
 
         doc
           .fontSize(10)
-          .font("Helvetica-Oblique")
+          .font("NotoSans")
           .fillColor("grey")
           .text(timestamp, { continued: true });
-        doc.font("Helvetica").fillColor("black").text(`  ${segment.text}`);
+
+        // Use appropriate font for the text content
+        const textFont = getFontForText(segment.text);
+        doc.font(textFont).fillColor("black").text(`  ${segment.text}`);
         doc.moveDown(0.5);
       });
 

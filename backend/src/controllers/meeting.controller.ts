@@ -12,6 +12,7 @@ import { ProtectedRequest } from "../types/app-request";
 import crypto from "crypto";
 import { serverUrl } from "../config";
 import { AIService } from "../services/ai.service";
+import { AudioService } from "../services/audio.service";
 import { PDFService } from "../services/pdf.service";
 import path from "path";
 import fs from "fs";
@@ -505,8 +506,29 @@ const generateTranscriptPdf = asyncHandler(
       throw new NotFoundError("Audio file not found on server");
     }
 
-    // Transcribe to get segments (this duplicates transcribe logic but is needed for segments)
-    const segments = await AIService.transcribeAudio(audioPath);
+    // Optimize audio before transcribing for PDF
+    let optimizedPath = audioPath;
+    try {
+      console.log("Optimizing audio for transcript PDF...");
+      optimizedPath =
+        await AudioService.optimizeAudioForTranscription(audioPath);
+    } catch (optError) {
+      console.warn(
+        "Audio optimization failed, proceeding with original:",
+        optError,
+      );
+    }
+
+    // Transcribe optimized audio
+    let segments;
+    try {
+      segments = await AIService.transcribeAudio(optimizedPath);
+    } finally {
+      // Cleanup optimized file if it's different (and exists)
+      if (optimizedPath !== audioPath && fs.existsSync(optimizedPath)) {
+        fs.unlinkSync(optimizedPath);
+      }
+    }
 
     // Generate Transcript PDF
     const pdfBuffer = await PDFService.generateTranscriptPDF(segments);
