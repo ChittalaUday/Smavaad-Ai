@@ -2,10 +2,8 @@ import React, { useState, useRef, useEffect } from "react";
 import { streamChatWithAI, getAIChatHistory } from "../api";
 import moment from "moment";
 import { useAuth } from "../context/AuthContext";
-import { IoMdSend } from "react-icons/io";
-import { RiRobot2Line, RiUser3Line } from "react-icons/ri";
+import { Send, Bot, Sparkles, User } from "lucide-react";
 import Avatar from "react-avatar";
-import { BsStars } from "react-icons/bs";
 
 const AIChat = () => {
     const { user } = useAuth();
@@ -83,13 +81,13 @@ const AIChat = () => {
     };
 
     return (
-        <div className="h-full w-full flex flex-col font-sans bg-transparent ">
+        <div className="h-full w-full flex flex-col font-sans bg-transparent">
             {/* --- Header --- */}
             <div className="absolute top-0 w-full z-10 p-4">
                 <div className="flex items-center justify-between px-6 py-3 bg-white/40 dark:bg-slate-900/40 backdrop-blur-xl border border-white/20 dark:border-white/5 rounded-2xl shadow-lg">
                     <div className="flex items-center gap-4">
-                        <div className="p-2 bg-gradient-to-tr from-blue-500 to-indigo-600 rounded-xl shadow-lg shadow-blue-500/20">
-                            <RiRobot2Line className="text-white text-xl" />
+                        <div className="p-2.5 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl shadow-lg shadow-indigo-500/20">
+                            <Bot size={22} className="text-white" />
                         </div>
                         <div>
                             <h1 className="font-bold text-slate-800 dark:text-white text-lg leading-tight">AI Assistant</h1>
@@ -101,9 +99,10 @@ const AIChat = () => {
                             </div>
                         </div>
                     </div>
-                    <div className="hidden md:block">
-                        <span className="text-xs px-2 py-1 bg-white/20 dark:bg-white/5 rounded text-slate-500 dark:text-slate-400 border border-white/10">
-                            Powered by Ollama
+                    <div className="hidden md:flex items-center gap-2">
+                        <Sparkles size={12} className="text-indigo-400" />
+                        <span className="text-xs px-2.5 py-1 bg-indigo-500/10 dark:bg-indigo-500/20 rounded-lg text-indigo-600 dark:text-indigo-300 font-medium border border-indigo-500/20">
+                            Powered by AI
                         </span>
                     </div>
                 </div>
@@ -113,8 +112,8 @@ const AIChat = () => {
             <div className="overflow-y-auto custom-scrollbar p-4 md:p-8 pt-28 pb-32 flex flex-col h-full w-full">
                 {messages.length === 0 ? (
                     <div className="h-full w-full flex flex-col items-center justify-center opacity-60">
-                        <div className="w-24 h-24 bg-gradient-to-tr from-primary/20 to-purple-500/20 rounded-full flex items-center justify-center mb-6 animate-pulse-slow">
-                            <BsStars className="text-4xl text-primary" />
+                        <div className="w-24 h-24 bg-gradient-to-tr from-indigo-500/15 to-purple-500/15 rounded-3xl flex items-center justify-center mb-6 border border-indigo-500/10">
+                            <Sparkles size={40} className="text-indigo-400" />
                         </div>
                         <h2 className="text-2xl font-bold text-slate-800 dark:text-white mb-2">How can I help you today?</h2>
                         <p className="text-slate-500 dark:text-slate-400 text-center max-w-sm">
@@ -134,8 +133,8 @@ const AIChat = () => {
                                             {isUser ? (
                                                 <Avatar name={user.username} src={user.avatarUrl} size="36" round={true} className="shadow-sm" />
                                             ) : (
-                                                <div className="w-9 h-9 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center shadow-md">
-                                                    <RiRobot2Line className="text-white text-sm" />
+                                                <div className="w-9 h-9 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-md">
+                                                    <Bot size={16} className="text-white" />
                                                 </div>
                                             )}
                                         </div>
@@ -154,9 +153,9 @@ const AIChat = () => {
                                                 </div>
                                             ) : (
                                                 <div className="flex gap-1.5 items-center h-6 px-1">
-                                                    <div className="w-1.5 h-1.5 bg-current rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-                                                    <div className="w-1.5 h-1.5 bg-current rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-                                                    <div className="w-1.5 h-1.5 bg-current rounded-full animate-bounce"></div>
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-bounce" style={{ animationDelay: "0ms" }} />
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-bounce" style={{ animationDelay: "150ms" }} />
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-bounce" style={{ animationDelay: "300ms" }} />
                                                 </div>
                                             )}
                                         </div>
@@ -173,7 +172,7 @@ const AIChat = () => {
             <div className="absolute bottom-6 w-full px-4 md:px-8 z-20 flex justify-center">
                 <form
                     onSubmit={handleSendMessage}
-                    className="flex items-center gap-3 p-2 pl-4 bg-white/70 dark:bg-slate-900/80 backdrop-blur-2xl border border-white/20 dark:border-white/10 shadow-2xl rounded-full transition-all focus-within:ring-2 focus-within:ring-primary/50 w-full max-w-3xl"
+                    className="flex items-center gap-3 p-2 pl-5 bg-white/70 dark:bg-slate-900/80 backdrop-blur-2xl border border-white/20 dark:border-white/10 shadow-2xl rounded-full transition-all focus-within:ring-2 focus-within:ring-indigo-500/50 w-full max-w-3xl"
                 >
                     <input
                         type="text"
@@ -186,9 +185,9 @@ const AIChat = () => {
                     <button
                         type="submit"
                         disabled={isLoading || !input.trim()}
-                        className="p-3 bg-primary hover:bg-primary_hover disabled:bg-slate-400 disabled:cursor-not-allowed text-white rounded-full shadow-lg transition-transform active:scale-95 group"
+                        className="p-3 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-400 disabled:cursor-not-allowed text-white rounded-full shadow-lg shadow-indigo-500/20 transition-all active:scale-95"
                     >
-                        <IoMdSend size={20} className="ml-0.5 group-hover:translate-x-0.5 transition-transform" />
+                        <Send size={18} />
                     </button>
                 </form>
             </div>

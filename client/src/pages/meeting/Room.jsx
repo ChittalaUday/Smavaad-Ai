@@ -1,31 +1,19 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useMeeting } from "../../context/MeetingContext";
-import VideoGrid from "../../components/meeting/VideoGrid";
-import Controls from "../../components/meeting/Controls";
-import Chat from "../../components/meeting/Chat"; // Meeting Chat
-import ParticipantList from "../../components/meeting/ParticipantList";
-import ChatsSection from "../../components/ChatsSection"; // Personal Chat
-import CallWrapUp from "../../components/meeting/CallWrapUp";
-import { useChat } from "../../context/ChatContext";
-import { CALL_STATES } from "../../hooks/useCallStateManager";
+import CallOverlay from "../../components/meeting/CallOverlay";
 
 const MeetingRoom = () => {
     const { meetingId } = useParams();
     const navigate = useNavigate();
     const {
-        joinMeeting, leaveMeeting, activeMeeting,
-        callState, callSummary, extractedIntents,
-        transcript, formattedDuration, handleDismissWrapUp,
-        isSummarizing, meetingFiles,
-        retrySummarization,
+        joinMeeting,
+        leaveMeeting,
+        activeMeeting,
+        callState
     } = useMeeting();
-    const hasJoinedRef = useRef(false);
 
-    // UI State
-    // 'meeting-chat' | 'participants' | 'personal-chat' | null
-    const [activeSidebar, setActiveSidebar] = useState(null);
-    const { currentSelectedChat } = useChat();
+    const hasJoinedRef = useRef(false);
 
     useEffect(() => {
         if (meetingId) {
@@ -43,97 +31,25 @@ const MeetingRoom = () => {
         if (activeMeeting) {
             hasJoinedRef.current = true;
         } else if (hasJoinedRef.current) {
+            // Meeting ended and wrap-up dismissed
             navigate("/chat", { replace: true, state: { sidebar: "meeting" } });
         }
     }, [activeMeeting, navigate]);
 
-    const handleParticipantAction = (action) => {
-        if (action === "personal-chat") {
-            setActiveSidebar("personal-chat");
-        } else {
-            setActiveSidebar(null);
-        }
-    };
-
-    const onDismissWrapUp = () => {
-        handleDismissWrapUp();
-        // activeMeeting becomes null → useEffect navigates to /meetings
-    };
-
-    // Show CallWrapUp when call has ENDED
-    if (callState === CALL_STATES.ENDED && hasJoinedRef.current) {
+    // Show loading while connecting
+    if (!activeMeeting && !hasJoinedRef.current) {
         return (
-            <div className="flex flex-col h-screen bg-gray-900 text-white">
-                <div className="bg-gray-800 p-2 text-center text-sm text-gray-400">
-                    Meeting ID: {meetingId} | Call Ended
-                </div>
-                <div className="flex-1 flex items-center justify-center p-4">
-                    <CallWrapUp
-                        formattedDuration={formattedDuration}
-                        callSummary={callSummary}
-                        extractedIntents={extractedIntents}
-                        transcript={transcript}
-                        onDismiss={onDismissWrapUp}
-                        isLoading={isSummarizing}
-                        meetingFiles={meetingFiles}
-                        onRetrySummarize={retrySummarization}
-                    />
-                </div>
+            <div className="h-screen w-full flex flex-col items-center justify-center bg-slate-950 text-white gap-4">
+                <div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+                <p className="text-slate-400 font-medium animate-pulse">Connecting to Meeting Room...</p>
             </div>
         );
     }
 
+    // Use the unified CallOverlay component
+    // It handles VideoGrid, Controls, Chat, Participants, LiveTranscript, and CallWrapUp internally.
     return (
-        <div className="flex flex-col h-screen bg-gray-900 text-white relative">
-            <div className="bg-gray-800 p-2 text-center text-sm text-gray-400">
-                Meeting ID: {meetingId} | {activeMeeting ? "Connected" : "Connecting..."}
-            </div>
-
-            <div className="flex-1 overflow-hidden flex relative">
-                <VideoGrid />
-
-                {/* Meeting Chat Sidebar */}
-                <Chat
-                    isOpen={activeSidebar === "meeting-chat"}
-                    onClose={() => setActiveSidebar(null)}
-                />
-
-                {/* Participant List Sidebar */}
-                {activeSidebar === "participants" && (
-                    <ParticipantList
-                        onClose={handleParticipantAction}
-                    />
-                )}
-
-                {/* Personal Chat Sidebar */}
-                {activeSidebar === "personal-chat" && (
-                    <div className="fixed inset-y-0 right-0 w-full md:w-96 bg-gray-900 border-l border-gray-700 z-50 flex flex-col shadow-xl">
-                        <div className="flex items-center justify-between p-4 border-b border-gray-700 bg-gray-800">
-                            <button
-                                onClick={() => setActiveSidebar("participants")}
-                                className="text-gray-400 hover:text-white flex items-center gap-1"
-                            >
-                                ← Back
-                            </button>
-                            <span className="font-semibold">
-                                {currentSelectedChat.current?.isGroupChat
-                                    ? currentSelectedChat.current.name
-                                    : "Personal Chat"}
-                            </span>
-                            <button onClick={() => setActiveSidebar(null)}>✕</button>
-                        </div>
-                        <div className="flex-1 overflow-hidden">
-                            <ChatsSection />
-                        </div>
-                    </div>
-                )}
-            </div>
-
-            <Controls
-                onChatToggle={() => setActiveSidebar(activeSidebar === "meeting-chat" ? null : "meeting-chat")}
-                onParticipantsToggle={() => setActiveSidebar(activeSidebar === "participants" ? null : "participants")}
-            />
-        </div>
+        <CallOverlay />
     );
 };
 

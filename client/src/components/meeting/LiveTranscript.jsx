@@ -22,111 +22,69 @@ const LiveTranscript = ({ transcript, extractedIntents, isOpen, onClose }) => {
         extractedIntents.decisions?.length > 0;
 
     return (
-        <div className="fixed inset-y-0 right-0 w-full md:w-96 bg-gray-900 border-l border-gray-700 z-50 flex flex-col shadow-2xl">
+        <div className="absolute top-20 right-4 w-80 max-h-[calc(100vh-160px)] flex flex-col bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden animate-slide-in-right z-40">
             {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b border-gray-700 bg-gray-800">
+            <div className="flex items-center justify-between p-4 border-b border-white/10 bg-white/5">
                 <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-                    <span className="font-semibold text-white text-sm">
-                        Live Transcript
+                    <div className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse shadow-lg shadow-indigo-500/50" />
+                    <span className="font-bold text-white text-sm tracking-wide">
+                        AI Insights & Transcript
                     </span>
                 </div>
                 <button
                     onClick={onClose}
-                    className="text-gray-400 hover:text-white transition-colors"
+                    className="p-1 hover:bg-white/10 rounded-lg text-slate-400 hover:text-white transition-all"
                 >
                     ✕
                 </button>
             </div>
 
-            {/* Transcript Area */}
-            <div
-                ref={scrollRef}
-                className="flex-1 overflow-y-auto p-4 space-y-2"
-                style={{ scrollBehavior: "smooth" }}
-            >
-                {transcript ? (
-                    <p className="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap">
-                        {transcript}
-                    </p>
-                ) : (
-                    <div className="text-center text-gray-500 mt-8">
-                        <p className="text-lg">🎤</p>
-                        <p className="text-sm mt-2">
-                            Listening... Speak to see your transcript here.
-                        </p>
-                    </div>
-                )}
-            </div>
-
-            {/* Extracted Intents Section */}
+            {/* Extracted Intents (Top Priority) */}
             {hasIntents && (
-                <div className="border-t border-gray-700 p-4 max-h-48 overflow-y-auto">
-                    <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
-                        Detected Items
-                    </h4>
-
+                <div className="p-4 bg-indigo-500/10 border-b border-white/5 space-y-3">
                     {extractedIntents.action_items?.length > 0 && (
-                        <div className="mb-2">
-                            {extractedIntents.action_items.map((item, i) => (
-                                <div
-                                    key={`action-${i}`}
-                                    className="flex items-start gap-2 mb-1"
-                                >
-                                    <span className="inline-block px-1.5 py-0.5 text-xs rounded bg-blue-600 text-blue-100 flex-shrink-0 mt-0.5">
-                                        Action
-                                    </span>
-                                    <span className="text-xs text-gray-300">
-                                        {item.task}
-                                        {item.owner && (
-                                            <span className="text-gray-500"> → {item.owner}</span>
-                                        )}
-                                    </span>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-
-                    {extractedIntents.decisions?.length > 0 && (
-                        <div className="mb-2">
-                            {extractedIntents.decisions.map((item, i) => (
-                                <div
-                                    key={`decision-${i}`}
-                                    className="flex items-start gap-2 mb-1"
-                                >
-                                    <span className="inline-block px-1.5 py-0.5 text-xs rounded bg-purple-600 text-purple-100 flex-shrink-0 mt-0.5">
-                                        Decision
-                                    </span>
-                                    <span className="text-xs text-gray-300">
-                                        {item.description}
-                                    </span>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-
-                    {extractedIntents.deadlines?.length > 0 && (
                         <div>
-                            {extractedIntents.deadlines.map((item, i) => (
-                                <div
-                                    key={`deadline-${i}`}
-                                    className="flex items-start gap-2 mb-1"
-                                >
-                                    <span className="inline-block px-1.5 py-0.5 text-xs rounded bg-amber-600 text-amber-100 flex-shrink-0 mt-0.5">
-                                        Deadline
-                                    </span>
-                                    <span className="text-xs text-gray-300">
-                                        {item.description}
-                                        {item.date && (
-                                            <span className="text-gray-500"> — {item.date}</span>
-                                        )}
-                                    </span>
+                            <h5 className="text-[10px] font-bold text-indigo-300 uppercase tracking-wider mb-1">Action Items</h5>
+                            {extractedIntents.action_items.slice(-2).map((item, i) => ( // Show last 2
+                                <div key={`action-${i}`} className="text-xs text-white bg-indigo-500/20 px-2 py-1.5 rounded-lg border border-indigo-500/20 mb-1 last:mb-0">
+                                    {item.task}
                                 </div>
                             ))}
                         </div>
                     )}
                 </div>
             )}
+
+            {/* Transcript Area */}
+            <div
+                ref={scrollRef}
+                className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-hide"
+            >
+                {transcript ? (
+                    <div className="flex flex-col gap-2">
+                        {/* 
+                           We could split transcript by speaker if available, 
+                           but for now just raw text wrapped in a bubble 
+                        */}
+                        <p className="text-slate-300 text-sm leading-relaxed whitespace-pre-wrap font-light">
+                            {transcript}
+                        </p>
+                    </div>
+                ) : (
+                    <div className="text-center text-slate-500 py-8 flex flex-col items-center gap-2">
+                        <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center">
+                            <div className="animate-ping absolute inline-flex h-8 w-8 rounded-full bg-indigo-400 opacity-20"></div>
+                            <span className="text-xl">🎤</span>
+                        </div>
+                        <p className="text-sm">Listening for conversation...</p>
+                    </div>
+                )}
+            </div>
+
+            {/* Footer */}
+            <div className="p-3 border-t border-white/10 bg-white/5 text-center">
+                <p className="text-[10px] text-slate-500">AI is analyzing the conversation in real-time</p>
+            </div>
         </div>
     );
 };

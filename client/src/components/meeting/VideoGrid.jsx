@@ -57,7 +57,7 @@ const VideoGrid = () => {
     };
 
     return (
-        <div className="flex-1 p-4 h-full flex items-center justify-center overflow-hidden bg-gray-950">
+        <div className="flex-1 p-4 h-full flex items-center justify-center overflow-hidden bg-transparent">
             <div
                 className={`
                     grid ${getGridClass()} gap-4 w-full h-full max-h-full transition-all duration-500 ease-in-out
