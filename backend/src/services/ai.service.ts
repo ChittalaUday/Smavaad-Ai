@@ -225,16 +225,16 @@ export class AIService {
       // 2. Fallback to Groq / LLM
       try {
         const prompt = `
-You are an expert meeting assistant. Analyze the following meeting transcript and provide a structured summary.
+You are an expert meeting assistant. Analyze the following meeting data which may include an audio transcript AND chat messages exchanged during the meeting. Consider ALL available information (both spoken discussion and written chat messages) to provide a comprehensive structured summary.
 
-Transcript:
+Meeting Data:
 """
 ${transcript.slice(0, 15000)} 
 """
 
-Output strictly valid JSON with the following structure:
+Output strictly valid JSON (no markdown formatting, no code fences) with the following structure:
 {
-  "summary": "A comprehensive summary of the discussion...",
+  "summary": "A comprehensive summary covering both the spoken discussion and any chat messages...",
   "action_items": [
     { "task": "Specific task", "owner": "Person name or Role (if mentioned)", "deadline": "Timeframe (if mentioned)" }
   ],

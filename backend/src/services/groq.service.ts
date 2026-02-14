@@ -11,6 +11,8 @@ const DEFAULT_MODEL = groqConfig.model || "llama-3.3-70b-versatile";
 const STATIC_FALLBACK_MODELS = [
   "llama-3.3-70b-versatile",
   "llama-3.1-8b-instant",
+  "openai/gpt-oss-120b",
+  "openai/gpt-oss-20b",
   "qwen/qwen3-32b",
   "meta-llama/llama-4-maverick-17b-128e-instruct",
   "meta-llama/llama-4-scout-17b-16e-instruct",
@@ -129,6 +131,10 @@ async function withModelFallback<T>(
         error?.code === "rate_limit_exceeded" ||
         (error?.message && error.message.includes("429"));
 
+      const isDecommissioned =
+        error?.error?.code === "model_decommissioned" ||
+        (error?.message && error.message.includes("decommissioned"));
+
       if (isRateLimit) {
         const retryAfter = parseRetryAfter(error.message || "");
         console.log(
@@ -137,8 +143,15 @@ async function withModelFallback<T>(
         blockedModels.set(model, Date.now() + retryAfter);
       }
 
+      if (isDecommissioned) {
+        // Block decommissioned models for a long time (24 hours)
+        console.log(`Model ${model} is decommissioned. Blocking permanently.`);
+        blockedModels.set(model, Date.now() + 24 * 60 * 60 * 1000);
+      }
+
       const isRetryable =
         isRateLimit ||
+        isDecommissioned ||
         error?.status === 400 || // Bad request (e.g., model doesn't support chat)
         error?.status === 503 || // Service unavailable
         (error?.message && error.message.includes("does not support"));
@@ -268,7 +281,16 @@ export class GroqService {
         max_tokens,
       });
 
-      const content = completion.choices[0]?.message?.content || "{}";
+      let content = completion.choices[0]?.message?.content || "{}";
+
+      // Strip markdown code fences if present (e.g., ```json ... ```)
+      content = content.trim();
+      const codeFenceMatch = content.match(
+        /^```(?:json)?\s*\n?([\s\S]*?)\n?```\s*$/i,
+      );
+      if (codeFenceMatch) {
+        content = codeFenceMatch[1].trim();
+      }
 
       try {
         return JSON.parse(content) as T;
