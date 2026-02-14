@@ -323,6 +323,16 @@ export const generateMeetingPdf = (meetingId) => {
   return apiClient.post(`/api/meetings/${meetingId}/generate-pdf`);
 };
 
+export const generateMeetingTranscriptPdf = (meetingId) => {
+  return apiClient.post(
+    `/api/meetings/${meetingId}/generate-transcript-pdf`,
+    {},
+    {
+      responseType: "blob",
+    },
+  );
+};
+
 export const saveMeetingAudio = (meetingId, audioBlob) => {
   const formData = new FormData();
   formData.append("audio", audioBlob, `meeting-${meetingId}.webm`);

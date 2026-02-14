@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { getMeetingDetail, summarizeMeeting } from "../../api";
+import { getMeetingDetail, summarizeMeeting, generateMeetingTranscriptPdf } from "../../api";
 import { useAuth } from "../../context/AuthContext";
 import { format, formatDistanceStrict } from "date-fns";
+import { saveAs } from "file-saver";
 import {
     FiArrowLeft,
     FiClock,
@@ -32,6 +33,7 @@ const MeetingDetail = () => {
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState("summary");
     const [summarizing, setSummarizing] = useState(false);
+    const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
     useEffect(() => {
         fetchDetail();
@@ -65,6 +67,21 @@ const MeetingDetail = () => {
             toast.error(error.response?.data?.message || "Failed to summarize meeting");
         } finally {
             setSummarizing(false);
+        }
+    };
+
+    const handleGenerateTranscriptPdf = async () => {
+        try {
+            setIsGeneratingPdf(true);
+            const response = await generateMeetingTranscriptPdf(meetingId);
+            const blob = new Blob([response.data], { type: "application/pdf" });
+            saveAs(blob, `transcript-${meetingId}.pdf`);
+            toast.success("PDF generated successfully!");
+        } catch (error) {
+            console.error("Failed to generate PDF:", error);
+            toast.error("Failed to generate PDF");
+        } finally {
+            setIsGeneratingPdf(false);
         }
     };
 
@@ -362,6 +379,24 @@ const SummaryTab = ({ meeting, onSummarize, isSummarizing }) => {
                                 className="flex items-center gap-2 px-6 py-3 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 rounded-xl border border-indigo-500/20 transition-all font-medium"
                             >
                                 <FiVideo size={18} /> Download Audio
+                            </button>
+                        )}
+                        {meeting.audioUrl && (
+                            <button
+                                onClick={handleGenerateTranscriptPdf}
+                                disabled={isGeneratingPdf}
+                                className="flex items-center gap-2 px-6 py-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl border border-red-500/20 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {isGeneratingPdf ? (
+                                    <>
+                                        <div className="w-4 h-4 border-2 border-red-400/30 border-t-red-400 rounded-full animate-spin" />
+                                        Generating...
+                                    </>
+                                ) : (
+                                    <>
+                                        <FiFileText size={18} /> Transcript PDF
+                                    </>
+                                )}
                             </button>
                         )}
                         {meeting.pdfUrl && (

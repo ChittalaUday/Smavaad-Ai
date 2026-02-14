@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { createMeeting, getMyMeetings, getMeetingDetail, summarizeMeeting, transcribeMeeting, generateMeetingPdf } from "../api";
+import { createMeeting, getMyMeetings, getMeetingDetail, summarizeMeeting, transcribeMeeting, generateMeetingPdf, generateMeetingTranscriptPdf } from "../api";
 import { useAuth } from "../context/AuthContext";
 import { format, formatDistanceStrict } from "date-fns";
 import {
@@ -21,6 +21,7 @@ import {
     FiCpu,
 } from "react-icons/fi";
 import { toast } from "react-toastify";
+import { saveAs } from "file-saver";
 
 // ─── Views ────────
 const VIEW = {
@@ -340,6 +341,7 @@ function DetailView({ meeting, loading, user, activeTab, setActiveTab, onBack })
         transcribing: false,
         summarizing: false,
         generatingPdf: false,
+        generatingTranscriptPdf: false,
     });
 
     const handleAction = async (type) => {
@@ -371,6 +373,21 @@ function DetailView({ meeting, loading, user, activeTab, setActiveTab, onBack })
             toast.error(`Failed to trigger ${type}`);
         } finally {
             setActionLoading(prev => ({ ...prev, [type]: false }));
+        }
+    };
+
+    const handleGenerateTranscriptPdf = async () => {
+        try {
+            setActionLoading(prev => ({ ...prev, generatingTranscriptPdf: true }));
+            const response = await generateMeetingTranscriptPdf(meeting.meetingId);
+            const blob = new Blob([response.data], { type: "application/pdf" });
+            saveAs(blob, `transcript-${meeting.meetingId}.pdf`);
+            toast.success("Transcript PDF generated!");
+        } catch (error) {
+            console.error("Failed to generate transcript PDF:", error);
+            toast.error("Failed to generate PDF");
+        } finally {
+            setActionLoading(prev => ({ ...prev, generatingTranscriptPdf: false }));
         }
     };
 
@@ -486,20 +503,21 @@ function DetailView({ meeting, loading, user, activeTab, setActiveTab, onBack })
                             {meeting.summary ? "Regenerate Summary" : "Generate Summary"}
                         </button>
 
+
                         <button
-                            onClick={() => handleAction("generatingPdf")}
-                            disabled={actionLoading.generatingPdf || !meeting.summary}
-                            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-semibold transition-all shadow-sm ${meeting.summary
-                                ? "bg-rose-500/10 text-rose-600 hover:bg-rose-500/20 border border-rose-200/50"
+                            onClick={handleGenerateTranscriptPdf}
+                            disabled={actionLoading.generatingTranscriptPdf || !meeting.audioUrl}
+                            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-semibold transition-all shadow-sm ${meeting.audioUrl
+                                ? "bg-red-500/10 text-red-600 hover:bg-red-500/20 border border-red-200/50"
                                 : "bg-gray-100 text-gray-400 cursor-not-allowed opacity-50"
                                 }`}
                         >
-                            {actionLoading.generatingPdf ? (
-                                <div className="w-2.5 h-2.5 border-2 border-rose-600 border-t-transparent rounded-full animate-spin" />
+                            {actionLoading.generatingTranscriptPdf ? (
+                                <div className="w-2.5 h-2.5 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
                             ) : (
-                                <FiFile size={12} />
+                                <FiFileText size={12} />
                             )}
-                            {meeting.pdfUrl ? "Regenerate PDF" : "Generate PDF"}
+                            Transcript PDF
                         </button>
                     </div>
                 )}
