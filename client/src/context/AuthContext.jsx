@@ -93,7 +93,7 @@ const AuthProvider = ({ children }) => {
     if (authError) {
       const timer = setTimeout(() => {
         setAuthError(null);
-      }, 2000); // 2 seconds
+      }, 5000); // 5 seconds
 
       return () => clearTimeout(timer);
     }
