@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useToast } from "../context/ToastContext";
 import { logo } from "../assets";
 import {
   Moon,
@@ -34,6 +35,7 @@ export default function Login() {
   const [stayLoggedIn, setStayLoggedIn] = useState(false);
   const [localError, setLocalError] = useState(null);
   const { login, authError } = useAuth();
+  const { showToast } = useToast();
 
   const handleFormSubmit = async (e) => {
     e.preventDefault();
@@ -52,6 +54,7 @@ export default function Login() {
     };
     try {
       await login(user);
+      showToast("Login successful!", "success");
     } catch (error) {
       console.error("Login failed", error);
     } finally {
@@ -176,8 +179,7 @@ export default function Login() {
                     ref={userIdRef}
                     id="email"
                     type="text"
-                    placeholder="name@company.com"
-                    placeholder="name@company.com"
+                    placeholder="name@mail.com"
                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl py-3 pl-10 pr-4 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-slate-900 dark:text-white placeholder:text-slate-400"
                   />
                 </div>
@@ -201,7 +203,6 @@ export default function Login() {
                     ref={passwordRef}
                     id="password"
                     type={showPassword ? "text" : "password"}
-                    placeholder="••••••••"
                     placeholder="••••••••"
                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl py-3 pl-10 pr-10 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-slate-900 dark:text-white placeholder:text-slate-400"
                   />

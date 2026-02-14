@@ -16,9 +16,10 @@ import WebRtcContextProvider from "./context/WebRtcContext";
 import { MeetingProvider, useMeeting } from "./context/MeetingContext";
 import IncomingCallNotification from "./components/meeting/IncomingCallNotification";
 import CallOverlay from "./components/meeting/CallOverlay";
+import { ToastProvider, useToast } from "./context/ToastContext"; // Import ToastProvider
 
-import { ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+// import { ToastContainer } from "react-toastify";
+// import "react-toastify/dist/ReactToastify.css";
 
 /**
  * Renders the active call as a full-screen overlay on top of the chat.
@@ -40,27 +41,29 @@ const CallLayer = () => {
 const AuthenticatedApp = () => {
   return (
     <SocketProvider>
-      <ChatProvider>
-        <MeetingProvider>
-          <IncomingCallNotification />
-          <CallLayer />
-          <Routes>
-            <Route
-              path="/chat"
-              element={
-                <WebRtcContextProvider>
-                  <Chat />
-                </WebRtcContextProvider>
-              }
-            />
-            <Route path="/ai-chat" element={<AIChat />} />
-            <Route path="/meeting" element={<MeetingHome />} />
-            <Route path="/meeting/:meetingId" element={<MeetingRoom />} />
-            <Route path="/meetings" element={<MeetingHistory />} />
-            <Route path="/meetings/:meetingId" element={<MeetingDetail />} />
-          </Routes>
-        </MeetingProvider>
-      </ChatProvider>
+      <ToastProvider>
+        <ChatProvider>
+          <MeetingProvider>
+            <IncomingCallNotification />
+            <CallLayer />
+            <Routes>
+              <Route
+                path="/chat"
+                element={
+                  <WebRtcContextProvider>
+                    <Chat />
+                  </WebRtcContextProvider>
+                }
+              />
+              <Route path="/ai-chat" element={<AIChat />} />
+              <Route path="/meeting" element={<MeetingHome />} />
+              <Route path="/meeting/:meetingId" element={<MeetingRoom />} />
+              <Route path="/meetings" element={<MeetingHistory />} />
+              <Route path="/meetings/:meetingId" element={<MeetingDetail />} />
+            </Routes>
+          </MeetingProvider>
+        </ChatProvider>
+      </ToastProvider>
     </SocketProvider>
   );
 };
@@ -70,48 +73,50 @@ function App() {
 
   return (
     <div className="App">
-      <ToastContainer position="top-right" autoClose={3000} />
-      <Routes>
-        <Route
-          path="/"
-          element={
-            token && user?._id ? (
-              <Navigate to="/chat" />
-            ) : (
-              <Navigate to="/login" />
-            )
-          }
-        ></Route>
+      {/* <ToastContainer position="top-right" autoClose={3000} /> */}
+      <ToastProvider>
+        <Routes>
+          <Route
+            path="/"
+            element={
+              token && user?._id ? (
+                <Navigate to="/chat" />
+              ) : (
+                <Navigate to="/login" />
+              )
+            }
+          ></Route>
 
-        <Route
-          exact
-          path="/login"
-          element={
-            <PublicRoute>
-              <Login />
-            </PublicRoute>
-          }
-        />
-        <Route
-          exact
-          path="/register"
-          element={
-            <PublicRoute>
-              <Register />
-            </PublicRoute>
-          }
-        />
+          <Route
+            exact
+            path="/login"
+            element={
+              <PublicRoute>
+                <Login />
+              </PublicRoute>
+            }
+          />
+          <Route
+            exact
+            path="/register"
+            element={
+              <PublicRoute>
+                <Register />
+              </PublicRoute>
+            }
+          />
 
-        {/* All authenticated routes share providers */}
-        <Route
-          path="/*"
-          element={
-            <PrivateRoute>
-              <AuthenticatedApp />
-            </PrivateRoute>
-          }
-        />
-      </Routes>
+          {/* All authenticated routes share providers */}
+          <Route
+            path="/*"
+            element={
+              <PrivateRoute>
+                <AuthenticatedApp />
+              </PrivateRoute>
+            }
+          />
+        </Routes>
+      </ToastProvider>
     </div>
   );
 }
