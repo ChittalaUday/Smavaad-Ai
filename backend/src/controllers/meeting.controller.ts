@@ -473,6 +473,54 @@ const generatePdf = asyncHandler(
   },
 );
 
+const generateTranscriptPdf = asyncHandler(
+  async (req: ProtectedRequest, res: Response) => {
+    const { meetingId } = req.params;
+
+    const meeting = await meetingRepo.findByMeetingIdDetailed(meetingId);
+    if (!meeting) {
+      throw new NotFoundError("Meeting not found");
+    }
+
+    if (!meeting.audioUrl) {
+      throw new BadRequestError(
+        "No audio URL available to generate transcript PDF",
+      );
+    }
+
+    // Determine local file path from URL
+    const filename = meeting.audioUrl.split("/").pop();
+    if (!filename) throw new InternalError("Invalid audio URL");
+
+    const audioPath = path.join(
+      __dirname,
+      "..",
+      "..",
+      "public",
+      "audio",
+      filename,
+    );
+
+    if (!fs.existsSync(audioPath)) {
+      throw new NotFoundError("Audio file not found on server");
+    }
+
+    // Transcribe to get segments (this duplicates transcribe logic but is needed for segments)
+    const segments = await AIService.transcribeAudio(audioPath);
+
+    // Generate Transcript PDF
+    const pdfBuffer = await PDFService.generateTranscriptPDF(segments);
+
+    res.set({
+      "Content-Type": "application/pdf",
+      "Content-Disposition": `attachment; filename="transcript-${meetingId}.pdf"`,
+      "Content-Length": pdfBuffer.length,
+    });
+
+    res.send(pdfBuffer);
+  },
+);
+
 // AI Chat for meeting
 const getMeetingAIResponse = asyncHandler(
   async (req: ProtectedRequest, res: Response) => {
@@ -565,5 +613,6 @@ export default {
   summarizeMeeting,
   transcribeMeeting,
   generatePdf,
+  generateTranscriptPdf,
   getMeetingAIResponse,
 };

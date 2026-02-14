@@ -208,14 +208,63 @@ export class AIService {
     intents?: any[],
   ): Promise<SummaryResponse> {
     try {
-      const response = await axios.post<SummaryResponse>(
-        `${aiServiceUrl}/api/call-summarize`,
-        { transcript, intents },
-      );
+      // 1. Try Python Service (if available)
+      const url = `${aiServiceUrl.replace(/\/api$/, "")}/api/call-summarize`; // Ensure no double /api
+
+      const response = await axios.post<SummaryResponse>(url, {
+        transcript,
+        intents,
+      });
       return response.data;
     } catch (error) {
-      console.error("AI Service Summary Error:", error);
-      throw new InternalError("Failed to summarize call");
+      console.warn(
+        "AI Python Service Summary Failed (likely offline), falling back to Groq/LLM:",
+        (error as any).message,
+      );
+
+      // 2. Fallback to Groq / LLM
+      try {
+        const prompt = `
+You are an expert meeting assistant. Analyze the following meeting transcript and provide a structured summary.
+
+Transcript:
+"""
+${transcript.slice(0, 15000)} 
+"""
+
+Output strictly valid JSON with the following structure:
+{
+  "summary": "A comprehensive summary of the discussion...",
+  "action_items": [
+    { "task": "Specific task", "owner": "Person name or Role (if mentioned)", "deadline": "Timeframe (if mentioned)" }
+  ],
+  "key_topics": ["Topic 1", "Topic 2", "Topic 3"]
+}
+`;
+
+        if (aiConfig.primaryProvider === "groq") {
+          return await GroqService.getJsonCompletion<SummaryResponse>(prompt);
+        } else {
+          // Default to Ollama fallback if configured, otherwise try Groq as fallback
+          try {
+            const response = await ollama.generate({
+              model: "deepseek-r1:7b",
+              prompt: prompt + "\nRespond with JSON only.",
+              format: "json",
+              stream: false,
+            });
+            return JSON.parse(response.response);
+          } catch (ollamaError) {
+            console.warn("Ollama fallback failed, trying Groq...", ollamaError);
+            return await GroqService.getJsonCompletion<SummaryResponse>(prompt);
+          }
+        }
+      } catch (llmError) {
+        console.error("All AI Summary attempts failed:", llmError);
+        throw new InternalError(
+          "Failed to summarize call (All providers failed)",
+        );
+      }
     }
   }
 

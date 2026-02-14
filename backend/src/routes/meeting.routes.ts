@@ -78,6 +78,13 @@ router.post(
 );
 
 router.post(
+  "/:meetingId/generate-transcript-pdf",
+  param("meetingId").exists().isString().trim(),
+  validate,
+  meetingController.generateTranscriptPdf,
+);
+
+router.post(
   "/:meetingId/audio",
   param("meetingId").exists().isString().trim(),
   validate,
