@@ -7,6 +7,7 @@ import {
   getAllMessages,
   sendMessage,
   updateMessage,
+  getAIResponse,
 } from "../controllers/message.controller";
 import { messagesValidator } from "../validators/messages.validator";
 import { upload } from "../middlewares/multer.middlwares";
@@ -25,12 +26,17 @@ router
     messagesValidator(),
     validate,
     upload.fields([{ name: "attachments", maxCount: 5 }]),
-    sendMessage
+    sendMessage,
   );
 
 router
   .route("/:messageId")
   .delete(mongoIdPathValidator("messageId"), validate, deleteMessage)
   .put(mongoIdPathValidator("messageId"), validate, updateMessage);
+
+// route to get ai response
+router
+  .route("/ai/:chatId")
+  .post(mongoIdPathValidator("chatId"), validate, getAIResponse);
 
 export default router;

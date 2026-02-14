@@ -85,4 +85,11 @@ router.post(
   meetingController.saveAudio,
 );
 
+router.post(
+  "/:meetingId/ai",
+  param("meetingId").exists().isString().trim(),
+  validate,
+  meetingController.getMeetingAIResponse,
+);
+
 export default router;

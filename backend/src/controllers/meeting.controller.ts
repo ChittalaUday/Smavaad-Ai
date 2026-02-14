@@ -473,6 +473,85 @@ const generatePdf = asyncHandler(
   },
 );
 
+// AI Chat for meeting
+const getMeetingAIResponse = asyncHandler(
+  async (req: ProtectedRequest, res: Response) => {
+    const { meetingId } = req.params;
+    const { prompt } = req.body;
+    const currentUserId = req.user?._id;
+
+    if (!meetingId) throw new BadRequestError("Meeting Id not provided");
+
+    const meeting = await meetingRepo.findByMeetingIdDetailed(meetingId);
+
+    if (!meeting) throw new NotFoundError("Meeting not found");
+
+    // Check participation
+    const isParticipant = meeting.participants.some(
+      (p: any) => p.user._id.toString() === currentUserId.toString(),
+    );
+    if (!isParticipant) {
+      throw new ForbiddenError("You are not a participant of this meeting");
+    }
+
+    const messages = meeting.messages || [];
+
+    // Format chat history for context
+    const chatHistory = messages
+      .map((msg: any) => `${msg.sender?.username || "Unknown"}: ${msg.text}`)
+      .join("\n");
+
+    const systemPrompt = `You are a helpful AI assistant analyzing a meeting conversation history.
+Here involves a meeting conversation between users:
+${chatHistory}
+
+Answer the user's question based on the conversation above. Be concise and helpful.`;
+
+    const aiMessages = [
+      { role: "system", content: systemPrompt },
+      {
+        role: "user",
+        content: prompt || "Summarize this meeting conversation.",
+      },
+    ];
+
+    try {
+      res.setHeader("Content-Type", "text/event-stream");
+      res.setHeader("Cache-Control", "no-cache");
+      res.setHeader("Connection", "keep-alive");
+
+      const stream = await AIService.streamChatWithAI(aiMessages as any);
+
+      for await (const chunk of stream) {
+        let content = "";
+        if (chunk.message && chunk.message.content) {
+          content = chunk.message.content;
+        } else if (chunk.response) {
+          content = chunk.response;
+        }
+
+        if (content) {
+          res.write(`data: ${JSON.stringify({ content })}\n\n`);
+        }
+
+        if (chunk.done) {
+          res.write("data: [DONE]\n\n");
+          res.end();
+          return;
+        }
+      }
+      res.write("data: [DONE]\n\n");
+      res.end();
+    } catch (error) {
+      console.error("AI Stream Error:", error);
+      if (!res.headersSent) {
+        throw new InternalError("Failed to generate AI response");
+      }
+      res.end();
+    }
+  },
+);
+
 export default {
   createMeeting,
   validateMeeting,
@@ -486,4 +565,5 @@ export default {
   summarizeMeeting,
   transcribeMeeting,
   generatePdf,
+  getMeetingAIResponse,
 };

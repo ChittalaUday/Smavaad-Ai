@@ -19,6 +19,7 @@ import {
 import { emitSocketEvent } from "../socket";
 import { ChatEventEnum } from "../constants";
 import Chat from "../database/model/Chat";
+import { AIService } from "../services/ai.service";
 
 export const getAllMessages = asyncHandler(
   async (req: ProtectedRequest, res: Response) => {
@@ -27,7 +28,7 @@ export const getAllMessages = asyncHandler(
 
     // retrieve the chat of corresponding chatId
     const selectedChat = await chatRepo.getChatByChatId(
-      new Types.ObjectId(chatId)
+      new Types.ObjectId(chatId),
     );
 
     // if not chat found throw an error
@@ -42,7 +43,7 @@ export const getAllMessages = asyncHandler(
 
     // get all the messages in aggreated form
     const messages = await messageRepo.getAllMessagesAggregated(
-      new Types.ObjectId(chatId)
+      new Types.ObjectId(chatId),
     );
 
     if (!messages) {
@@ -51,9 +52,9 @@ export const getAllMessages = asyncHandler(
 
     return new SuccessResponse(
       "messages retrieved successfully",
-      messages
+      messages,
     ).send(res);
-  }
+  },
 );
 
 // send a message
@@ -76,7 +77,7 @@ export const sendMessage = asyncHandler(
     }
 
     const selectedChat = await chatRepo.getChatByChatId(
-      new Types.ObjectId(chatId)
+      new Types.ObjectId(chatId),
     );
 
     if (!selectedChat) {
@@ -98,18 +99,18 @@ export const sendMessage = asyncHandler(
       new Types.ObjectId(currentUserId),
       new Types.ObjectId(chatId),
       content || "",
-      attachmentFiles
+      attachmentFiles,
     );
 
     // updating the last message of the chat
     const updatedChat = await chatRepo.updateChatFields(
       new Types.ObjectId(chatId),
-      { lastMessage: message._id }
+      { lastMessage: message._id },
     );
 
     // structure the message
     const structuredMessage = await messageRepo.getStructuredMessages(
-      message._id
+      message._id,
     );
 
     if (!structuredMessage.length) {
@@ -124,15 +125,15 @@ export const sendMessage = asyncHandler(
         req,
         participantId.toString(),
         ChatEventEnum.MESSAGE_RECEIVED_EVENT,
-        structuredMessage[0]
+        structuredMessage[0],
       );
     });
 
     return new SuccessResponse(
       "message sent successfully",
-      structuredMessage[0]
+      structuredMessage[0],
     ).send(res);
-  }
+  },
 );
 
 // delete message
@@ -146,7 +147,7 @@ export const deleteMessage = asyncHandler(
     }
 
     const existingMessage = await messageRepo.getMessageById(
-      new Types.ObjectId(messageId)
+      new Types.ObjectId(messageId),
     );
 
     if (!existingMessage)
@@ -161,7 +162,8 @@ export const deleteMessage = asyncHandler(
     // if the existing chat participants includes the current userId
     if (
       !existingChat?.participants?.some(
-        (participantId) => participantId.toString() === currentUserId.toString()
+        (participantId) =>
+          participantId.toString() === currentUserId.toString(),
       )
     ) {
       throw new AuthFailureError("you don't own the message");
@@ -213,12 +215,12 @@ export const deleteMessage = asyncHandler(
         {
           messageId: existingMessage._id,
           // chatLastMessage: lastMessage.content || "attachment",
-        }
+        },
       );
     });
 
     return new SuccessMsgResponse("message deleted successfully").send(res);
-  }
+  },
 );
 
 // update message
@@ -232,18 +234,20 @@ export const updateMessage = asyncHandler(
     if (!content) throw new BadRequestError("Content not provided");
 
     const message = await messageRepo.getMessageById(
-      new Types.ObjectId(messageId)
+      new Types.ObjectId(messageId),
     );
 
     if (!message) throw new NotFoundError("Message not found");
 
     if (message.sender.toString() !== currentUserId?.toString()) {
-      throw new AuthFailureError("You are not authorized to update this message");
+      throw new AuthFailureError(
+        "You are not authorized to update this message",
+      );
     }
 
     const updatedMessage = await messageRepo.updateMessage(
       new Types.ObjectId(messageId),
-      content
+      content,
     );
 
     if (!updatedMessage) throw new InternalError("Failed to update message");
@@ -256,13 +260,97 @@ export const updateMessage = asyncHandler(
           req,
           participantId.toString(),
           ChatEventEnum.MESSAGE_UPDATED_EVENT,
-          updatedMessage
+          updatedMessage,
         );
       });
     }
 
-    return new SuccessResponse("Message updated successfully", updatedMessage).send(
-      res
+    return new SuccessResponse(
+      "Message updated successfully",
+      updatedMessage,
+    ).send(res);
+  },
+);
+
+//ai chat for all messages for chat id
+export const getAIResponse = asyncHandler(
+  async (req: ProtectedRequest, res: Response) => {
+    const { chatId } = req.params;
+    const { prompt } = req.body;
+    const currentUserId = req.user?._id;
+
+    if (!chatId) throw new BadRequestError("Chat Id not provided");
+
+    const chat = await chatRepo.getChatByChatId(new Types.ObjectId(chatId));
+
+    if (!chat) throw new NotFoundError("Chat not found");
+
+    const participantIds = chat.participants.map((id) => id.toString());
+    if (!participantIds.includes(currentUserId.toString())) {
+      throw new AuthFailureError("You are not authorized to access this chat");
+    }
+
+    const messages = await messageRepo.getAllMessagesAggregated(
+      new Types.ObjectId(chatId),
     );
-  }
+
+    if (!messages) throw new InternalError("Failed to retrieve messages");
+
+    // Format chat history for context
+    const chatHistory = messages
+      .map((msg: any) => `${msg.sender.username}: ${msg.content}`)
+      .join("\n");
+
+    const systemPrompt = `You are a helpful AI assistant analyzing a conversation history.
+Here involves a conversation between users:
+${chatHistory}
+
+Answer the user's question based on the conversation above. Be concise and helpful.`;
+
+    const aiMessages = [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: prompt || "Summarize this conversation." },
+    ];
+
+    try {
+      // Set headers for SSE
+      res.setHeader("Content-Type", "text/event-stream");
+      res.setHeader("Cache-Control", "no-cache");
+      res.setHeader("Connection", "keep-alive");
+
+      const stream = await AIService.streamChatWithAI(aiMessages as any);
+
+      for await (const chunk of stream) {
+        let content = "";
+
+        // Handle different provider response formats
+        if (chunk.message && chunk.message.content) {
+          content = chunk.message.content;
+        } else if (chunk.response) {
+          content = chunk.response;
+        }
+
+        if (content) {
+          res.write(`data: ${JSON.stringify({ content })}\n\n`);
+        }
+
+        if (chunk.done) {
+          res.write("data: [DONE]\n\n");
+          res.end();
+          return;
+        }
+      }
+
+      // Ensure specific DONE signal if not sent by loop
+      res.write("data: [DONE]\n\n");
+      res.end();
+    } catch (error) {
+      console.error("AI Stream Error:", error);
+      // If headers already sent, we can't send JSON error, but can end stream
+      if (!res.headersSent) {
+        throw new InternalError("Failed to generate AI response");
+      }
+      res.end();
+    }
+  },
 );
