@@ -50,8 +50,8 @@ export default function AudioPdfSection() {
     };
 
     return (
-        <div className="h-full w-full flex flex-col items-center justify-center bg-backgroundLight1 dark:bg-backgroundDark3 p-4">
-            <div className="bg-white dark:bg-backgroundDark2 rounded-xl shadow-lg p-8 w-full max-w-md flex flex-col items-center gap-6">
+        <div className="h-full w-full flex flex-col items-center justify-center bg-transparent p-4">
+            <div className="glass rounded-xl p-8 w-full max-w-md flex flex-col items-center gap-6">
                 <div className="text-primary text-5xl">
                     <FaFilePdf />
                 </div>
@@ -99,8 +99,8 @@ export default function AudioPdfSection() {
                     onClick={handleUpload}
                     disabled={loading || !file}
                     className={`w-full py-3 px-4 rounded-lg text-white font-medium transition-colors ${loading || !file
-                            ? "bg-gray-400 cursor-not-allowed"
-                            : "bg-primary hover:bg-primary/90"
+                        ? "bg-gray-400 cursor-not-allowed"
+                        : "bg-primary hover:bg-primary/90"
                         }`}
                 >
                     {loading ? "Processing..." : "Generate PDF"}

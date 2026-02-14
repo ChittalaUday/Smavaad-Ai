@@ -85,7 +85,7 @@ const AIChat = () => {
     };
 
     return (
-        <div className="flex flex-col h-full bg-gray-900 text-white">
+        <div className="flex flex-col h-full bg-transparent text-white">
             {/* Header */}
             <div className="p-4 border-b border-gray-700 bg-gray-800 flex justify-between items-center">
                 <h1 className="text-xl font-bold">AI Assistant</h1>

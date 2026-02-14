@@ -1,13 +1,11 @@
 import React, { useEffect, useRef, useState } from "react";
 import { saveAs } from "file-saver";
-import mime from "mime-types";
 import {
   BiSearch,
   BsThreeDotsVertical,
   FaFile,
   FiImage,
   ImEnlarge2,
-  IoMdAttach,
   IoMdSend,
   IoVideocamOutline,
   MdArrowBackIos,
@@ -29,26 +27,26 @@ import Avatar from "react-avatar";
 import { summarizeChat, chatWithConversation } from "../api";
 import AIChatModal from "./AIChatModal";
 
-const MessageCont = ({ isOwnMessage, isGroupChat, message }) => {
+const MessageCont = ({ isOwnMessage, message }) => {
   const { deleteChatMessage } = useChat();
   const [showMessageMenu, setShowMessageMenu] = useState(false);
   const [isOpenView, setIsOpenView] = useState(false);
   const [currentImageUrl, setCurrentImageUrl] = useState("");
   const { user } = useAuth();
+  const { handleCall, setTargetUserId, checkCallStatus, setCallMessageId, meetingSummaryBlob, lastEndedCallMessageId, downloadMeetingSummary } = useConnectWebRtc();
 
   const handleEnlargeClick = (url) => {
     setCurrentImageUrl(url);
     setIsOpenView(true);
   };
 
-  const { handleCall, setTargetUserId, checkCallStatus, setCallMessageId, meetingSummaryBlob, lastEndedCallMessageId, downloadMeetingSummary } =
-    useConnectWebRtc();
+  const isCallMessage = message.content.includes("Started a video call");
 
   const handleJoinCall = () => {
     checkCallStatus(message.sender._id, (isActive) => {
       if (isActive) {
         setTargetUserId(message.sender._id);
-        setCallMessageId(message._id); // Track this message for updates
+        setCallMessageId(message._id);
         handleCall();
       } else {
         alert("Call has ended");
@@ -56,207 +54,124 @@ const MessageCont = ({ isOwnMessage, isGroupChat, message }) => {
     });
   };
 
-  const isCallMessage =
-    message.content === "📞 Started a video call" ||
-    message.content === "📞 Started a group video call";
-
   return (
-    <div className={`w-auto flex my-2 `}>
-      <div
-        className={`flex  ${isOwnMessage ? "max-w-[50%] md:max-w-[85%] ml-auto " : "mr-auto"
-          }`}
-      >
-        <div
-          className={`flex flex-col  justify-center relative dark:bg-opacity-20 dark:bg-primary min-w-[120px] max-w-full bg-backgroundLight3  p-2 md:p-1 rounded-xl ${isOwnMessage ? "rounded-br-none" : "rounded-bl-none"
-            } mb-5 ${isOwnMessage ? "order-2" : "order-1"}`}
-        >
-          {isCallMessage && !isOwnMessage && (
-            <button
-              onClick={handleJoinCall}
-              className="bg-green-500 text-white px-3 py-1 rounded-md mb-2 text-sm hover:bg-green-600 w-full"
-            >
-              Join Call
-            </button>
-          )}
+    <div className={`flex w-full mb-6 ${isOwnMessage ? "justify-end" : "justify-start"}`}>
+      <div className={`flex max-w-[85%] md:max-w-[70%] ${isOwnMessage ? "flex-row-reverse" : "flex-row"} gap-3 group`}>
 
-          {message._id === lastEndedCallMessageId && meetingSummaryBlob && (
-            <button
-              onClick={downloadMeetingSummary}
-              className="bg-blue-500 text-white px-3 py-1 rounded-md mb-2 text-sm hover:bg-blue-600 w-full flex items-center justify-center gap-2"
-            >
-              <PiDownloadSimpleBold className="text-lg" /> Download Transcript
-            </button>
-          )}
-          {message.attachments?.length ? (
-            <div className="flex gap-1 flex-wrap">
-              {message.attachments?.map((file) => (
-                <div className="flex flex-col">
-                  <div>
-                    {(() => {
-                      const fileExtension = file.url
-                        .split("/")
-                        .pop()
-                        .toLowerCase()
-                        .split(".")
-                        .pop();
-                      const isImage = [
-                        "jpg",
-                        "jpeg",
-                        "png",
-                        "webp",
-                        "gif",
-                        "svg",
-                      ].includes(fileExtension);
+        {/* Avatar for opponent */}
+        {!isOwnMessage && (
+          <Avatar
+            name={message.sender?.username}
+            src={message.sender?.avatarUrl}
+            size="32"
+            round={true}
+            className="self-end mb-1 shadow-sm"
+          />
+        )}
 
-                      if (isImage) {
-                        return (
-                          <img
-                            src={file.url}
-                            loading="lazy"
-                            className={`${message.attachments?.length > 1
-                              ? "size-44"
-                              : "size-72 md:size-60"
-                              } object-cover rounded-md`}
-                          />
-                        );
-                      } else {
-                        return (
-                          <div className="flex flex-col items-center justify-center">
-                            <FaFile className="text-3xl text-slate-400" />
-                            <p>
-                              {limitChar(file.url.split("/").pop(), 10)}.
-                              {fileExtension}
-                            </p>
-                          </div>
-                        );
-                      }
-                    })()}
+        <div className="flex flex-col relative">
+          <div
+            className={`p-4 rounded-2xl shadow-sm backdrop-blur-md border border-white/5 
+                ${isOwnMessage
+                ? "bg-primary text-white rounded-tr-none"
+                : "bg-white/60 dark:bg-slate-800/60 text-slate-800 dark:text-slate-100 rounded-tl-none"
+              }`}
+          >
+            {/* Initial logic for call/files kept similar but styled */}
+            {isCallMessage && !isOwnMessage && (
+              <button onClick={handleJoinCall} className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg mb-2 text-sm w-full shadow-md transition-transform active:scale-95">
+                Join Call
+              </button>
+            )}
+            {message._id === lastEndedCallMessageId && meetingSummaryBlob && (
+              <button
+                onClick={downloadMeetingSummary}
+                className="bg-blue-500 text-white px-3 py-1 rounded-md mb-2 text-sm hover:bg-blue-600 w-full flex items-center justify-center gap-2"
+              >
+                <PiDownloadSimpleBold className="text-lg" /> Download Transcript
+              </button>
+            )}
 
-                    {isOpenView && (
-                      <ViewImage
-                        openView={isOpenView}
-                        setOpenView={setIsOpenView}
-                        imageUrl={currentImageUrl}
-                      />
-                    )}
-                  </div>
-                  <div className="flex justify-between items-center mt-3 rounded-sm">
-                    <div
-                      className="cursor-pointer"
+            {/* Attachments */}
+            {message.attachments?.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-2">
+                {message.attachments.map((file, idx) => {
+                  const isImage = file.url.match(/\.(jpg|jpeg|png|gif|webp)$/i);
+                  return isImage ? (
+                    <img
+                      key={idx}
+                      src={file.url}
+                      className="w-48 h-48 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
                       onClick={() => handleEnlargeClick(file.url)}
-                    >
-                      <ImEnlarge2 className="dark:text-text_light_primary" />
+                    />
+                  ) : (
+                    <div key={idx} className="flex items-center gap-2 p-2 bg-black/10 rounded-lg">
+                      <FaFile />
+                      <span className="text-xs truncate max-w-[100px]">{file.url.split('/').pop()}</span>
+                      <PiDownloadSimpleBold className="cursor-pointer" onClick={() => saveAs(file.url)} />
                     </div>
-                    <div
-                      className="cursor-pointer"
-                      onClick={() => {
-                        saveAs(file.url, file.url.split("/").slice(-1));
-                      }}
-                    >
-                      <PiDownloadSimpleBold className="text-xl dark:text-text_light_primary" />
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            ""
-          )}
-          <p className="p-2 md:p-2 text-base md:text-md text-slate-900 dark:text-slate-100 ">
-            {message.content}
-          </p>
+                  )
+                })}
+                {isOpenView && (
+                  <ViewImage
+                    openView={isOpenView}
+                    setOpenView={setIsOpenView}
+                    imageUrl={currentImageUrl}
+                  />
+                )}
+              </div>
+            )}
 
-          <div className="flex items-center gap-1 text-xs text-slate-400 absolute bottom-0 right-1 ">
-            {/* <span>
-              <LuClock3 />
-            </span> */}
-            <span className="text-[10px]">
-              {moment(message.createdAt)
-                .add("TIME_ZONE", "hours")
-                .fromNow(true)}{" "}
-              ago
-            </span>
+
+            <p className="text-sm md:text-base leading-relaxed whitespace-pre-wrap">{message.content}</p>
           </div>
-        </div>
-        <div
-          className={`mx-3 md:mx-0 ${isOwnMessage ? "order-1" : "order-2"} `}
-        >
-          <div className=" relative cursor-pointer text-md text-slate-500 hover:text-slate-800 dark:hover:text-slate-300">
-            <OutsideClickHandler
-              onOutsideClick={() => setShowMessageMenu(false)}
-            >
-              <BsThreeDotsVertical
-                onClick={() => setShowMessageMenu(!showMessageMenu)}
-              />
-              {showMessageMenu ? (
-                <div className="text-slate-100 bg-text_dark_secondary p-2 text-sm rounded-md absolute top-0 -left-14">
-                  <p
-                    onClick={() => {
-                      navigator.clipboard.writeText(message.content);
-                      setShowMessageMenu(false);
-                    }}
-                    className=" mb-1 hover:text-slate-300"
-                  >
-                    copy
-                  </p>
-                  <p
-                    onClick={() => deleteChatMessage(message._id)}
-                    className={`text-red-400 hover:text-red-500 ${user._id !== message?.sender._id && "hidden"
-                      }`}
-                  >
-                    Delete
-                  </p>
+
+          <div className={`flex items-center gap-2 mt-1 text-[10px] text-slate-400 font-medium ${isOwnMessage ? "justify-end" : "justify-start"}`}>
+            <span>{moment(message.createdAt).fromNow()}</span>
+            {isOwnMessage && (
+              <OutsideClickHandler onOutsideClick={() => setShowMessageMenu(false)}>
+                <div className="relative">
+                  <BsThreeDotsVertical
+                    className="cursor-pointer hover:text-slate-600 dark:hover:text-slate-200 opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={() => setShowMessageMenu(!showMessageMenu)}
+                  />
+                  {showMessageMenu && (
+                    <div className="absolute bottom-4 right-0 bg-white dark:bg-slate-800 shadow-xl rounded-lg p-1 z-50 min-w-[100px] border border-slate-200 dark:border-slate-700">
+                      <button
+                        onClick={() => deleteChatMessage(message._id)}
+                        className="flex items-center gap-2 px-3 py-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 w-full rounded-md text-xs font-semibold"
+                      >
+                        <MdDeleteOutline /> Delete
+                      </button>
+                    </div>
+                  )}
                 </div>
-              ) : (
-                ""
-              )}
-            </OutsideClickHandler>
+              </OutsideClickHandler>
+            )}
           </div>
         </div>
       </div>
     </div>
   );
 };
+
 
 const SummaryModal = ({ isOpen, onClose, summary, isLoading }) => {
   if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-lg w-full m-4 shadow-xl">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold dark:text-white flex items-center gap-2">
-            <BsMagic /> Chat Summary
-          </h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
-            <RxCross2 className="text-2xl" />
-          </button>
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-2xl w-full border border-white/10 overflow-hidden flex flex-col max-h-[80vh]">
+        <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-800">
+          <h2 className="text-lg font-bold flex items-center gap-2 text-slate-800 dark:text-white"><BsMagic className="text-purple-500" /> Chat Summary</h2>
+          <button onClick={onClose}><RxCross2 /></button>
         </div>
-        <div className="dark:text-gray-300 max-h-[60vh] overflow-y-auto">
-          {isLoading ? (
-            <div className="flex justify-center items-center py-8">
-              <Loading />
-            </div>
-          ) : (
-            <p className="whitespace-pre-wrap leading-relaxed">
-              {summary}
-            </p>
-          )}
-        </div>
-        <div className="mt-6 flex justify-end">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-          >
-            Close
-          </button>
+        <div className="p-6 overflow-y-auto flex-1 text-slate-700 dark:text-slate-300 leading-relaxed custom-scrollbar">
+          {isLoading ? <Loading /> : summary}
         </div>
       </div>
     </div>
-  );
-};
-
-
+  )
+}
 
 export default function ChatsSection() {
   const {
@@ -276,262 +191,133 @@ export default function ChatsSection() {
   const [showSummary, setShowSummary] = useState(false);
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [summaryContent, setSummaryContent] = useState("");
-  const [showAIChat, setShowAIChat] = useState(false); // State for AI Chat Modal
-
-  const opponentParticipant = getOpponentParticipant(
-    currentSelectedChat.current?.participants,
-    user._id
-  );
-
-  const opponentUsername = opponentParticipant?.username;
-  const opponentProfilePictureUrl = opponentParticipant?.avatarUrl;
-
-  const scrollToBottomRef = new useRef();
-
-  const scrollToBottom = () => {
-    scrollToBottomRef.current?.scrollIntoView();
-  };
-
-  // const { handleCall, setTargetUserId, targetUserId } = useConnectWebRtc();
+  const [showAIChat, setShowAIChat] = useState(false);
   const { startCall } = useMeeting();
 
-  const handleCallButtonClick = async () => {
-    if (currentSelectedChat.current?.isGroupChat) {
-      // Filter out self from participants list if needed, or backend handles it
-      const participants = currentSelectedChat.current.participants.map(p => p._id);
-      await startCall(participants);
-    } else {
-      if (opponentParticipant?._id) {
-        await startCall([opponentParticipant._id]);
-      }
-    }
-  };
+  const scrollToBottomRef = useRef();
 
-  const handleSummarize = async () => {
+  const toggleSummary = async () => {
     setShowSummary(true);
+    if (summaryContent) return; // Don't regenerate if already present (optional optimization)
     setSummaryLoading(true);
     try {
       const res = await summarizeChat(currentSelectedChat.current._id);
       setSummaryContent(res.data.data.summary);
-    } catch (error) {
-      console.error("Failed to summarize chat:", error);
-      setSummaryContent("Failed to generate summary. Please try again.");
-    } finally {
-      setSummaryLoading(false);
+    } catch (e) { console.error(e); }
+    finally { setSummaryLoading(false); }
+  }
+
+  const handleCallAction = async () => {
+    if (currentSelectedChat.current?.isGroupChat) {
+      const participants = currentSelectedChat.current.participants.map(p => p._id);
+      await startCall(participants);
+    } else {
+      const opponent = getOpponentParticipant(currentSelectedChat.current?.participants, user._id);
+      if (opponent?._id) await startCall([opponent._id]);
     }
-  };
+  }
 
+  useEffect(() => { scrollToBottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages]);
 
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+  const opponent = !currentSelectedChat.current.isGroupChat
+    ? getOpponentParticipant(currentSelectedChat.current?.participants, user._id)
+    : null;
 
   return (
-    <div className="overflow-y-hidden">
-      <SummaryModal
-        isOpen={showSummary}
-        onClose={() => setShowSummary(false)}
-        summary={summaryContent}
-        isLoading={summaryLoading}
-      />
-      <AIChatModal
-        isOpen={showAIChat}
-        onClose={() => setShowAIChat(false)}
-        checkId={currentSelectedChat.current?._id}
-        chatFunction={chatWithConversation}
-      />
-      <div className="flex w-full items-center justify-between p-5 md:p-4 shadow-md md:shadow-xl ">
-        <div className="flex gap-3 items-center ">
-          <div onClick={() => setIsChatSelected(false)}>
-            {" "}
-            <MdArrowBackIos className="hidden md:block dark:text-white text-2xl" />{" "}
-          </div>
+    <div className="relative h-full w-full flex flex-col font-sans">
+      <SummaryModal isOpen={showSummary} onClose={() => setShowSummary(false)} summary={summaryContent} isLoading={summaryLoading} />
+      <AIChatModal isOpen={showAIChat} onClose={() => setShowAIChat(false)} checkId={currentSelectedChat.current?._id} chatFunction={chatWithConversation} />
+
+      {/* 1. Glass Header */}
+      <div className="flex items-center justify-between p-4 border-b border-white/10 bg-white/40 dark:bg-black/20 backdrop-blur-md z-10 absolute top-0 w-full rounded-t-3xl text-sm md:text-base">
+        <div className="flex items-center gap-3">
+          <button onClick={() => setIsChatSelected(false)} className="md:hidden p-2 hover:bg-white/10 rounded-full"><MdArrowBackIos /></button>
+
           {currentSelectedChat.current.isGroupChat ? (
-            <div className="w-10 relative h-10 flex-shrink-0 flex justify-start items-center flex-nowrap mr-3">
-              {currentSelectedChat.current.participants
-                .slice(0, 3)
-                .map((participant, i) => {
-                  return (
-                    <Avatar
-                      key={participant._id}
-                      name={participant.username}
-                      src={participant.avatarUrl}
-                      size="40"
-                      round={true}
-                      className={`border-white absolute outline outline-3 outline-black ${i === 0
-                        ? "left-0 z-30"
-                        : i === 1
-                          ? "left-2 z-20"
-                          : i === 2
-                            ? "left-4 z-10"
-                            : ""
-                        }`}
-                    />
-                  );
-                })}
+            <div className="flex -space-x-3">
+              {currentSelectedChat.current.participants.slice(0, 3).map(p => (
+                <Avatar key={p._id} name={p.username} src={p.avatarUrl} size="36" round={true} className="border-2 border-white dark:border-slate-800 shadow-sm" />
+              ))}
             </div>
           ) : (
-            <Avatar
-              name={opponentUsername}
-              src={opponentProfilePictureUrl}
-              size="40"
-              round={true}
-              className=" object-cover"
-            />
+            <div className="relative">
+              <Avatar name={opponent?.username} src={opponent?.avatarUrl} size="40" round={true} className="shadow-md" />
+              <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></span>
+            </div>
           )}
 
-          {/* <img
-            className="size-12 rounded-full object-cover"
-            src={opponentProfilePictureUrl}
-            alt=""
-          /> */}
-          <h3 className="font-medium text-xl md:text-md text-slate-800 dark:text-white">
-            {currentSelectedChat.current?.isGroupChat
-              ? currentSelectedChat.current.name
-              : opponentUsername}
-          </h3>
+          <div className="flex flex-col">
+            <h2 className="font-bold text-slate-800 dark:text-white text-lg leading-tight">
+              {currentSelectedChat.current.isGroupChat ? currentSelectedChat.current.name : opponent?.username}
+            </h2>
+            <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Active now</span>
+          </div>
         </div>
 
-        <div className="text-xl flex gap-5 text-slate-800 dark:text-slate-100 ">
-          <div className="cursor-pointer" title="Ask AI" onClick={() => setShowAIChat(true)}>
-            <BsRobot />
-          </div>
-          <div className="cursor-pointer" title="Summarize Chat" onClick={handleSummarize}>
-            <BsMagic />
-          </div>
-          <div className="cursor-pointer">
-            <BiSearch />
-          </div>
-          {/* <div className="cursor-pointer">
-            <IoCallOutline />
-          </div>
-        */}
-          <div className="cursor-pointer">
-            <div className="cursor-pointer">
-              <IoVideocamOutline onClick={handleCallButtonClick} />
-            </div>
-          </div>
-          <div className="cursor-pointer text-red-500">
-            {currentSelectedChat.current?.admin.toString() === user._id ? (
-              <MdDeleteOutline
-                onClick={() => deleteUserChat(currentSelectedChat.current?._id)}
-              />
-            ) : (
-              ""
-            )}
-          </div>
+        <div className="flex items-center gap-2 md:gap-4 text-slate-600 dark:text-slate-300">
+          <button className="p-2 hover:bg-white/20 rounded-full transition-colors" title="Summarize" onClick={toggleSummary}><BsMagic /></button>
+          <button className="p-2 hover:bg-white/20 rounded-full transition-colors" title="AI Chat" onClick={() => setShowAIChat(true)}><BsRobot /></button>
+          <button className="p-2 hover:bg-white/20 rounded-full transition-colors" title="Start Call" onClick={handleCallAction}><IoVideocamOutline /></button>
+          {currentSelectedChat.current?.admin?.toString() === user._id && (
+            <button className="p-2 hover:bg-red-500/10 text-red-500 rounded-full transition-colors" onClick={() => deleteUserChat(currentSelectedChat.current?._id)}><MdDeleteOutline /></button>
+          )}
         </div>
       </div>
 
-      <div className="chat-msg-cont relative overflow-auto px-4 md:px-2 w-full h-[calc(100vh-180px)] md:h-[calc(100vh-260px)] ">
+      {/* 2. Messages Area */}
+      <div className="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-8 pt-24 pb-32 flex flex-col w-full">
         {loadingMessages ? (
-          <div className=" h-full w-full flex items-center justify-center">
-            <Loading />
-          </div>
+          <div className="h-full flex items-center justify-center"><Loading /></div>
         ) : !messages?.length ? (
-          <div className="h-full w-full flex items-center justify-center">
-            <h1 className="text-2xl text-slate-400 dark:text-slate-500">
-              No Messages Yet...
-            </h1>
+          <div className="h-full flex flex-col items-center justify-center opacity-50">
+            <div className="text-6xl mb-4">👋</div>
+            <p>Say hello!</p>
           </div>
         ) : (
-          <>
-            {messages?.map((msg) => (
-              <MessageCont
-                key={msg._id}
-                isOwnMessage={msg.sender?._id === user?._id}
-                isGroupChatMessage={currentSelectedChat.current?.isGroupChat}
-                message={msg}
-              />
-            ))}
-            <div ref={scrollToBottomRef} />
-          </>
+          messages.map(msg => (
+            <MessageCont key={msg._id} isOwnMessage={msg.sender?._id === user?._id} message={msg} />
+          ))
         )}
+        <div ref={scrollToBottomRef} />
       </div>
-      {!!attachments.length && (
-        <div className="showAttachmentFiles absolute bottom-24  grid grid-cols-5 gap-2 ">
-          {attachments?.map((file, index) => (
-            <div
-              key={index}
-              className="px-2 bg-slate-900 bg-opacity-50 rounded-md flex flex-col items-center"
-            >
-              <div className="text-red-500 w-full ">
-                <RxCross2
-                  className="float-right text-2xl cursor-pointer"
-                  onClick={() => removeFileFromAttachments(index)}
-                />
+
+      {/* 3. Floating Composer */}
+      <div className="absolute bottom-6 w-full px-4 md:px-6 z-20 flex justify-center">
+        {/* Preview Attachments */}
+        {attachments.length > 0 && (
+          <div className="flex gap-2 mb-2 p-2 bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl rounded-xl shadow-lg animate-slide-up w-fit">
+            {attachments.map((file, i) => (
+              <div key={i} className="relative group">
+                {file.type.startsWith('image') ? (
+                  <img src={URL.createObjectURL(file)} className="w-16 h-16 object-cover rounded-lg" />
+                ) : (
+                  <div className="w-16 h-16 bg-slate-200 dark:bg-slate-700 rounded-lg flex items-center justify-center"><FaFile /></div>
+                )}
+                <button onClick={() => removeFileFromAttachments(i)} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-md opacity-0 group-hover:opacity-100 transition-opacity"><RxCross2 size={12} /></button>
               </div>
-              {file.type.startsWith("image/") ? (
-                <img
-                  className="w-full h-auto object-cover"
-                  src={URL.createObjectURL(file)}
-                  alt=""
-                />
-              ) : (
-                <div className="flex flex-col gap-2 my-5 items-center">
-                  <FaFile className="text-3xl text-white" />
-                  <p className="text-xs text-slate-400 dark:text-white">
-                    {file.name}
-                  </p>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-      <div className="h-[90px] md:h-auto border-t shadow-xl dark:border-slate-500 light-upper-cont-shadow dark:dark-upper-cont-shadow bg-slate w-full flex items-center justify-between p-4 md:p-2 ">
-        <div className="flex-1 mr-4 md:mr-2 ">
+            ))}
+          </div>
+        )}
+
+        <div className="flex items-center gap-2 p-2 bg-white/70 dark:bg-slate-900/80 backdrop-blur-2xl border border-white/20 dark:border-white/10 shadow-2xl rounded-full transition-all focus-within:ring-2 focus-within:ring-primary/50 w-full max-w-4xl">
+          <label htmlFor="img-upload" className="p-3 text-slate-500 hover:text-primary cursor-pointer transition-colors"><FiImage size={24} /></label>
+          <input type="file" id="img-upload" className="hidden" accept="image/*" multiple onChange={e => setAttachments([...e.target.files])} />
+
           <input
             type="text"
-            placeholder="Enter Message..."
-            className="w-full h-full px-4 py-2 md:p-2 md:text-sm rounded-lg dark:bg-slate-600 border border-transparent bg-backgroundLight3 focus:outline-none dark:text-white text-black "
-            onKeyDown={(e) => {
-              if (e.key === "Enter") sendChatMessage();
-            }}
+            className="flex-1 bg-transparent border-none outline-none text-slate-800 dark:text-white placeholder:text-slate-400 font-medium px-2"
+            placeholder="Type a message..."
             value={message}
-            onChange={(e) => setMessage(e.target.value)}
+            onChange={e => setMessage(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && sendChatMessage()}
           />
-        </div>
-
-        <div className="flex items-center space-x-4 md:space-x-2">
-          <div>
-            <label htmlFor="imageAttach" className="cursor-pointer">
-              <FiImage className="text-primary text-2xl md:text-md hover:text-primary_hover" />
-            </label>
-            <input
-              type="file"
-              accept="image/*"
-              id="imageAttach"
-              hidden
-              value=""
-              max={5}
-              multiple
-              onChange={(e) => setAttachments([...e.target.files])}
-            />
-          </div>
-          {/* // future version  */}
-          <div>
-            <label htmlFor="fileAttach" className="cursor-pointer">
-              <IoMdAttach className="text-primary text-xl hover:text-primary_hover" />
-            </label>
-            <input
-              type="file"
-              id="fileAttach"
-              hidden
-              value=""
-              max={5}
-              multiple
-              onChange={(e) => setAttachments([...e.target.files])}
-            />
-          </div>
 
           <button
-            disabled={!message && !attachments.length}
             onClick={sendChatMessage}
-            className="bg-primary hover:bg-primary_hover transition-colors px-4 py-2 md:px-3 md:py-1 rounded-lg text-white"
+            disabled={!message && !attachments.length}
+            className="p-3 bg-primary hover:bg-primary_hover disabled:bg-slate-400 text-white rounded-full shadow-lg transition-transform active:scale-90"
           >
-            <IoMdSend className="text-xl" />
+            <IoMdSend size={20} className="pl-1" />
           </button>
         </div>
       </div>

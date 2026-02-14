@@ -1,78 +1,70 @@
 import moment from "moment";
-import { profile } from "../assets";
 import Avatar from "react-avatar";
 import { useAuth } from "../context/AuthContext";
 import { getChatObjectMetadata, limitChar } from "../utils";
 
-export default function RecentUserChatCard({ chat, onClick, isActive }) {
-  // usercontext
+export default function RecentUserChatCard({ chat, isActive }) {
   const { user } = useAuth();
-
-  const filteredChat = getChatObjectMetadata(chat, user); // filter the chat object metadata
+  const filteredChat = getChatObjectMetadata(chat, user);
 
   return (
     <div
-      onClick={() => onClick(chat)}
-      className={`flex gap-2 p-4 my-1 rounded-md hover:bg-backgroundLight3  dark:hover:bg-backgroundDark1 ${isActive ? "bg-backgroundLight3 dark:bg-backgroundDark1 " : ""
-        } items-center w-full cursor-pointer`}
+      className={`flex gap-3 p-3 rounded-xl items-center w-full transition-all duration-200 border border-transparent
+        ${isActive
+          ? "bg-white/20 dark:bg-white/10 border-white/10 shadow-lg backdrop-blur-md"
+          : "hover:bg-white/10 dark:hover:bg-white/5 hover:backdrop-blur-sm hover:translate-x-1"
+        }
+      `}
     >
-      {chat.isGroupChat ? (
-        <div className="w-12 relative h-12 mr-2 flex-shrink-0 flex justify-start items-center flex-nowrap">
-          {chat.participants.slice(0, 3).map((participant, i) => {
-            return (
+      <div className="flex-shrink-0">
+        {chat.isGroupChat ? (
+          <div className="w-12 h-12 relative flex-shrink-0">
+            {chat.participants.slice(0, 3).map((participant, i) => (
               <Avatar
                 key={participant._id}
                 name={participant.username}
                 src={participant.avatarUrl}
-                size="40"
+                size="32"
                 round={true}
-                className={`border-white absolute outline outline-3 outline-black ${i === 0
-                  ? "left-0 z-30"
-                  : i === 1
-                    ? "left-2 z-20"
-                    : i === 2
-                      ? "left-4 z-10"
-                      : ""
+                className={`absolute border-2 border-slate-50 dark:border-slate-900 shadow-md ${i === 0 ? "left-0 top-0 z-30" : i === 1 ? "left-3 top-0 z-20" : "left-1.5 top-3 z-10"
                   }`}
               />
-            );
-          })}
-        </div>
-      ) : (
-        <Avatar
-          className="rounded-full object-cover"
-          name={filteredChat.title}
-          src={filteredChat.avatar}
-          size="48"
-          round={true}
-        />
-      )}
-
-      <div className=" w-full">
-        <div
-          className="flex items-center
-        justify-between"
-        >
-          <div>
-            <p className="font-medium text-base text-slate-700 dark:text-slate-100">
-              {filteredChat.title}
-            </p>
+            ))}
           </div>
-          <div className="font-light text-xs text-slate-500 dark:text-slate-400">
+        ) : (
+          <div className="relative">
+            <Avatar
+              className="rounded-full object-cover shadow-md"
+              name={filteredChat.title}
+              src={filteredChat.avatar}
+              size="48"
+              round={true}
+            />
+            {/* Online Indicator (Mocked for now, or use real data if available) */}
+            <span className="absolute bottom-0 right-0 w-3 h-3 bg-secondary border-2 border-white dark:border-slate-900 rounded-full shadow-sm"></span>
+          </div>
+        )}
+      </div>
+
+      <div className="flex-1 min-w-0">
+        <div className="flex justify-between items-baseline mb-1">
+          <h3 className={`font-semibold text-sm truncate ${isActive ? "text-slate-900 dark:text-white" : "text-slate-700 dark:text-slate-200"}`}>
+            {filteredChat.title}
+          </h3>
+          <span className={`text-[10px] font-medium ${isActive ? "text-slate-700 dark:text-slate-300" : "text-slate-400"}`}>
             {chat.lastMessage
               ? moment(chat.lastMessage?.createdAt)
-                .add("TIME_ZONE", "hours")
-                .fromNow(true) + " ago"
-              : ""}{" "}
-          </div>
+                .fromNow(true)
+              : ""}
+          </span>
         </div>
-        <div className=" w-full flex items-center justify-between">
-          <div className="text-sm text-slate-500 dark:text-slate-400">
-            {limitChar(filteredChat.lastMessage, 25)}
-          </div>
-          {/* <span className="rounded-full size-5 text-center content-center text-xs bg-secondary bg-opacity-20 shadow-md dark:text-white">
-            3
-          </span> */}
+
+        <div className="flex justify-between items-center">
+          <p className={`text-xs truncate max-w-[140px] ${isActive ? "text-slate-600 dark:text-slate-300" : "text-slate-500 dark:text-slate-400"}`}>
+            {limitChar(filteredChat.lastMessage, 30)}
+          </p>
+          {/* Unread Badge (Mocked) */}
+          {/* <div className="w-2 h-2 bg-primary rounded-full animate-pulse shadow-glow"></div> */}
         </div>
       </div>
     </div>
