@@ -1,5 +1,6 @@
 import fs from "fs";
 import Groq from "groq-sdk";
+import { File } from "buffer";
 import { groqConfig } from "../config";
 
 const groq = new Groq({ apiKey: groqConfig.apiKey });

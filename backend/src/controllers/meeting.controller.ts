@@ -490,6 +490,7 @@ const generateTranscriptPdf = asyncHandler(
     }
 
     // Determine local file path from URL
+    // URL: http://.../public/audio/filename.webm
     const filename = meeting.audioUrl.split("/").pop();
     if (!filename) throw new InternalError("Invalid audio URL");
 
@@ -503,13 +504,18 @@ const generateTranscriptPdf = asyncHandler(
     );
 
     if (!fs.existsSync(audioPath)) {
-      throw new NotFoundError("Audio file not found on server");
+      console.warn(`Audio file not found at ${audioPath}, cannot generate PDF`);
+      throw new NotFoundError(
+        "Audio file not found on server. Please ensure the audio was uploaded correctly.",
+      );
     }
 
     // Optimize audio before transcribing for PDF
     let optimizedPath = audioPath;
+    let optimizationFailed = false;
     try {
       console.log("Optimizing audio for transcript PDF...");
+      // Wrap optimization in a promise to handle timeout? AudioService is simpler for now.
       optimizedPath =
         await AudioService.optimizeAudioForTranscription(audioPath);
     } catch (optError) {
@@ -517,16 +523,34 @@ const generateTranscriptPdf = asyncHandler(
         "Audio optimization failed, proceeding with original:",
         optError,
       );
+      optimizationFailed = true;
+      optimizedPath = audioPath; // Fallback
     }
 
     // Transcribe optimized audio
     let segments;
     try {
+      if (optimizationFailed) {
+        console.log("Transcribing ORIGINAL audio...");
+      } else {
+        console.log("Transcribing OPTIMIZED audio...");
+      }
       segments = await AIService.transcribeAudio(optimizedPath);
+    } catch (transcribeError) {
+      console.error(
+        "Transcription failed during PDF generation:",
+        transcribeError,
+      );
+      throw new InternalError("Failed to transcribe meeting audio for PDF.");
     } finally {
-      // Cleanup optimized file if it's different (and exists)
+      // Cleanup optimized file if it's different and exists
+      // We only delete if it was created by optimization (i.e. different path)
       if (optimizedPath !== audioPath && fs.existsSync(optimizedPath)) {
-        fs.unlinkSync(optimizedPath);
+        try {
+          fs.unlinkSync(optimizedPath);
+        } catch (cleanupErr) {
+          console.warn("Failed to cleanup optimized audio file:", cleanupErr);
+        }
       }
     }
 
