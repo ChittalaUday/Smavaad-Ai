@@ -1,36 +1,89 @@
 version: "3.8"
 
 services:
+  mongo:
+    image: mongo:latest
+    container_name: samvaad_mongo
+    restart: always
+    volumes:
+      - mongo_data:/data/db
+    environment:
+      - MONGO_INITDB_DATABASE=SamVaadAI
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - samvaad_network
+
   backend:
     build:
       context: ./backend
+      dockerfile: Dockerfile
+    container_name: samvaad_backend
+    restart: always
     ports:
       - "5000:5000"
     env_file:
       - ./backend/.env
+    environment:
+      - DB_URL=mongodb://mongo:27017
+      - DB_NAME=SamVaadAI
+      - AI_SERVICE_URL=http://ai-services:8000/api
+      - NODE_ENV=production
     depends_on:
-      - mongo
+      mongo:
+        condition: service_healthy
     volumes:
-      - samvaad_backend_data:/app
+      - samvaad_backend_uploads:/app/public
+    networks:
+      - samvaad_network
+
+  ai-services:
+    build:
+      context: ./ai-services
+      dockerfile: Dockerfile
+    container_name: samvaad_ai_services
+    restart: always
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./ai-services/.env
+    volumes:
+      - ai_models:/root/.cache
+      - ai_temp:/app/temp_audio
+    networks:
+      - samvaad_network
 
   client:
     build:
       context: ./client
+      dockerfile: Dockerfile
+      args:
+        # These will be pulled from the .env in the root or the client/.env if provided
+        - VITE_SERVER_URL=${VITE_SERVER_URL:-http://localhost:5000}
+        - VITE_SOCKET_URI=${VITE_SOCKET_URI:-http://localhost:5000}
+        - VITE_SIGNALLING_SERVER_URL=${VITE_SIGNALLING_SERVER_URL:-https://signallingserver.bytenode.xyz/}
+        - VITE_AI_SERVICE_URL=${VITE_AI_SERVICE_URL:-http://localhost:8000}
+    container_name: samvaad_client
+    restart: always
     ports:
       - "3002:80"
-    env_file:
-      - ./client/.env
     depends_on:
       - backend
+    networks:
+      - samvaad_network
 
-  mongo:
-    image: mongo:latest
-    container_name: mongod
-    volumes:
-      - mongo_data:/data/db
-    environment:
-      - MONGO_INITDB_DATABASE=SAMVAAD_AI
+networks:
+  samvaad_network:
+    driver: bridge
 
 volumes:
   mongo_data:
-  samvaad_backend_data:
+  samvaad_backend_uploads:
+  ai_models:
+  ai_temp:
+
+
+

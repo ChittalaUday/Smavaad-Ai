@@ -58,47 +58,51 @@
 ## ✨ Features
 
 ### 💬 Real-Time Communication
-| Feature | Description |
-|---|---|
-| **Instant Messaging** | 1:1 and group chats with real-time delivery via WebSocket |
-| **File Sharing** | Share images, documents, and media with inline previews |
-| **Typing Indicators** | Live "is typing…" events across chat rooms |
-| **Chat Summarization** | AI-generated summaries of any conversation thread |
-| **Friend Requests** | Send, accept, and manage friend connections |
-| **Dark / Light Themes** | System-aware theme switching with manual toggle |
+
+| Feature                 | Description                                               |
+| ----------------------- | --------------------------------------------------------- |
+| **Instant Messaging**   | 1:1 and group chats with real-time delivery via WebSocket |
+| **File Sharing**        | Share images, documents, and media with inline previews   |
+| **Typing Indicators**   | Live "is typing…" events across chat rooms                |
+| **Chat Summarization**  | AI-generated summaries of any conversation thread         |
+| **Friend Requests**     | Send, accept, and manage friend connections               |
+| **Dark / Light Themes** | System-aware theme switching with manual toggle           |
 
 ### 📹 Video Conferencing
-| Feature | Description |
-|---|---|
-| **Peer-to-Peer Video** | WebRTC mesh topology for low-latency calls |
-| **Meeting Rooms** | Create, join, and manage meetings with unique IDs |
-| **In-Meeting Chat** | Send messages & emoji reactions during live calls |
-| **Live Transcription** | Real-time speech-to-text during meetings |
-| **Screen Sharing** | Share your screen with other participants |
-| **Call Overlay** | Accept incoming calls from any page without navigation |
-| **Participant Management** | Track join/leave events with timestamped logs |
+
+| Feature                    | Description                                            |
+| -------------------------- | ------------------------------------------------------ |
+| **Peer-to-Peer Video**     | WebRTC mesh topology for low-latency calls             |
+| **Meeting Rooms**          | Create, join, and manage meetings with unique IDs      |
+| **In-Meeting Chat**        | Send messages & emoji reactions during live calls      |
+| **Live Transcription**     | Real-time speech-to-text during meetings               |
+| **Screen Sharing**         | Share your screen with other participants              |
+| **Call Overlay**           | Accept incoming calls from any page without navigation |
+| **Participant Management** | Track join/leave events with timestamped logs          |
 
 ### 🤖 AI Intelligence
-| Feature | Description |
-|---|---|
-| **Audio Transcription** | Whisper ASR through both Groq Cloud & local Faster-Whisper |
-| **Speaker Diarization** | Pyannote.audio-powered speaker identification |
-| **Meeting Summarization** | Auto-generated summaries with action items & key topics |
-| **PDF Report Generation** | Professional meeting reports with full transcript & summary |
-| **AI Chat Assistant** | Streaming conversational AI with context memory (Ollama / Groq) |
-| **Audio Optimization** | FFmpeg pipeline — 16kHz mono, bandpass filter, loudness normalization |
-| **Smart Model Fallback** | Automatic retry across multiple LLM models on rate limits |
-| **Intent Extraction** | Identify action items, decisions, and follow-ups from calls |
-| **Translation** | Multi-language audio translation support |
+
+| Feature                   | Description                                                           |
+| ------------------------- | --------------------------------------------------------------------- |
+| **Audio Transcription**   | Whisper ASR through both Groq Cloud & local Faster-Whisper            |
+| **Speaker Diarization**   | Pyannote.audio-powered speaker identification                         |
+| **Meeting Summarization** | Auto-generated summaries with action items & key topics               |
+| **PDF Report Generation** | Professional meeting reports with full transcript & summary           |
+| **AI Chat Assistant**     | Streaming conversational AI with context memory (Ollama / Groq)       |
+| **Audio Optimization**    | FFmpeg pipeline — 16kHz mono, bandpass filter, loudness normalization |
+| **Smart Model Fallback**  | Automatic retry across multiple LLM models on rate limits             |
+| **Intent Extraction**     | Identify action items, decisions, and follow-ups from calls           |
+| **Translation**           | Multi-language audio translation support                              |
 
 ### 🔐 Security & Auth
-| Feature | Description |
-|---|---|
+
+| Feature                | Description                                            |
+| ---------------------- | ------------------------------------------------------ |
 | **JWT Authentication** | Access + Refresh token system with configurable expiry |
-| **Password Hashing** | BCrypt with automatic salt generation |
-| **Rate Limiting** | Express rate limiter to prevent abuse |
-| **CORS Protection** | Configurable multi-origin CORS support |
-| **Protected Routes** | Middleware-enforced auth on all sensitive endpoints |
+| **Password Hashing**   | BCrypt with automatic salt generation                  |
+| **Rate Limiting**      | Express rate limiter to prevent abuse                  |
+| **CORS Protection**    | Configurable multi-origin CORS support                 |
+| **Protected Routes**   | Middleware-enforced auth on all sensitive endpoints    |
 
 ---
 
@@ -153,56 +157,60 @@
 ## 🛠️ Tech Stack
 
 ### Frontend
-| Technology | Purpose |
-|---|---|
-| **React 18** | UI library with hooks & context API |
-| **Vite 5** | Lightning-fast HMR & optimized builds |
-| **Tailwind CSS 3** | Utility-first styling with dark mode |
-| **React Router v6** | Client-side routing & nested layouts |
-| **Socket.io Client** | Real-time bi-directional communication |
-| **Zustand** | Lightweight global state management |
+
+| Technology                 | Purpose                                 |
+| -------------------------- | --------------------------------------- |
+| **React 18**               | UI library with hooks & context API     |
+| **Vite 5**                 | Lightning-fast HMR & optimized builds   |
+| **Tailwind CSS 3**         | Utility-first styling with dark mode    |
+| **React Router v6**        | Client-side routing & nested layouts    |
+| **Socket.io Client**       | Real-time bi-directional communication  |
+| **Zustand**                | Lightweight global state management     |
 | **React Query (TanStack)** | Server state, caching & synchronization |
-| **Framer Motion** | Smooth animations & micro-interactions |
-| **React Hook Form + Zod** | Type-safe form validation |
-| **Radix UI** | Accessible dialog & dropdown primitives |
-| **Lucide React** | Modern icon system |
+| **Framer Motion**          | Smooth animations & micro-interactions  |
+| **React Hook Form + Zod**  | Type-safe form validation               |
+| **Radix UI**               | Accessible dialog & dropdown primitives |
+| **Lucide React**           | Modern icon system                      |
 
 ### Backend
-| Technology | Purpose |
-|---|---|
-| **Node.js 18+** | JavaScript runtime |
-| **TypeScript 5.4** | Type safety & developer experience |
-| **Express.js 4** | HTTP server & REST API framework |
-| **Socket.io 4** | WebSocket server for real-time events |
-| **MongoDB + Mongoose 8** | Document database with ODM |
-| **JWT (jsonwebtoken)** | Stateless authentication tokens |
-| **BCrypt** | Secure password hashing |
-| **Multer** | File upload middleware |
-| **Groq SDK** | Cloud LLM inference (Llama, Qwen, etc.) |
-| **Ollama** | Local LLM inference (fallback) |
-| **PDFKit** | Programmatic PDF generation |
-| **Fluent-FFmpeg** | Audio processing & optimization |
-| **Morgan** | HTTP request logging |
+
+| Technology               | Purpose                                 |
+| ------------------------ | --------------------------------------- |
+| **Node.js 18+**          | JavaScript runtime                      |
+| **TypeScript 5.4**       | Type safety & developer experience      |
+| **Express.js 4**         | HTTP server & REST API framework        |
+| **Socket.io 4**          | WebSocket server for real-time events   |
+| **MongoDB + Mongoose 8** | Document database with ODM              |
+| **JWT (jsonwebtoken)**   | Stateless authentication tokens         |
+| **BCrypt**               | Secure password hashing                 |
+| **Multer**               | File upload middleware                  |
+| **Groq SDK**             | Cloud LLM inference (Llama, Qwen, etc.) |
+| **Ollama**               | Local LLM inference (fallback)          |
+| **PDFKit**               | Programmatic PDF generation             |
+| **Fluent-FFmpeg**        | Audio processing & optimization         |
+| **Morgan**               | HTTP request logging                    |
 
 ### AI Services (Python)
-| Technology | Purpose |
-|---|---|
-| **FastAPI** | High-performance async API server |
-| **Faster-Whisper** | Optimized speech-to-text (CTranslate2) |
-| **Pyannote.audio** | Neural speaker diarization |
-| **PyTorch + TorchAudio** | Deep learning inference engine |
-| **SpeechBrain** | Speaker embedding extraction |
-| **Pydub** | Audio format conversion |
-| **ReportLab** | Server-side PDF generation |
+
+| Technology               | Purpose                                |
+| ------------------------ | -------------------------------------- |
+| **FastAPI**              | High-performance async API server      |
+| **Faster-Whisper**       | Optimized speech-to-text (CTranslate2) |
+| **Pyannote.audio**       | Neural speaker diarization             |
+| **PyTorch + TorchAudio** | Deep learning inference engine         |
+| **SpeechBrain**          | Speaker embedding extraction           |
+| **Pydub**                | Audio format conversion                |
+| **ReportLab**            | Server-side PDF generation             |
 
 ### Infrastructure
-| Tool | Purpose |
-|---|---|
-| **Docker & Docker Compose** | Container orchestration |
-| **Jenkins** | CI/CD automation pipeline |
-| **Vercel** | Frontend hosting & analytics |
-| **Nodemon** | Development hot-reload |
-| **ESLint** | Code linting & quality enforcement |
+
+| Tool                        | Purpose                            |
+| --------------------------- | ---------------------------------- |
+| **Docker & Docker Compose** | Container orchestration            |
+| **Jenkins**                 | CI/CD automation pipeline          |
+| **Vercel**                  | Frontend hosting & analytics       |
+| **Nodemon**                 | Development hot-reload             |
+| **ESLint**                  | Code linting & quality enforcement |
 
 ---
 
@@ -328,14 +336,14 @@ SAMVAAD AI/
 
 ### Prerequisites
 
-| Requirement | Version | Notes |
-|---|---|---|
-| **Node.js** | ≥ 18.x | [Download](https://nodejs.org/) |
-| **npm** | ≥ 9.x | Included with Node.js |
-| **Python** | ≥ 3.8 | [Download](https://python.org/) |
-| **MongoDB** | ≥ 6.x | Local or [Atlas](https://cloud.mongodb.com) |
-| **FFmpeg** | Latest | Required for audio processing |
-| **Docker** | Latest | _Optional_ — for containerized deployment |
+| Requirement | Version | Notes                                       |
+| ----------- | ------- | ------------------------------------------- |
+| **Node.js** | ≥ 18.x  | [Download](https://nodejs.org/)             |
+| **npm**     | ≥ 9.x   | Included with Node.js                       |
+| **Python**  | ≥ 3.8   | [Download](https://python.org/)             |
+| **MongoDB** | ≥ 6.x   | Local or [Atlas](https://cloud.mongodb.com) |
+| **FFmpeg**  | Latest  | Required for audio processing               |
+| **Docker**  | Latest  | _Optional_ — for containerized deployment   |
 
 ### 1️⃣ Clone the Repository
 
@@ -446,78 +454,78 @@ HUGGINGFACE_TOKEN=your-hf-token   # Required for Pyannote models
 
 ### 🔑 Authentication
 
-| Method | Endpoint | Description | Auth |
-|---|---|---|---|
-| `POST` | `/auth/register` | Create a new account | ❌ |
-| `POST` | `/auth/login` | Login & receive JWT tokens | ❌ |
-| `POST` | `/auth/logout` | Invalidate session | ✅ |
+| Method | Endpoint         | Description                | Auth |
+| ------ | ---------------- | -------------------------- | ---- |
+| `POST` | `/auth/register` | Create a new account       | ❌   |
+| `POST` | `/auth/login`    | Login & receive JWT tokens | ❌   |
+| `POST` | `/auth/logout`   | Invalidate session         | ✅   |
 
 ### 💬 Chat
 
-| Method | Endpoint | Description | Auth |
-|---|---|---|---|
-| `GET` | `/api/chat` | Get all user chats | ✅ |
-| `POST` | `/api/chat/access` | Create or access a 1:1 chat | ✅ |
-| `POST` | `/api/chat/create-group` | Create a group chat | ✅ |
-| `PUT` | `/api/chat/:chatId/add-user` | Add user to group | ✅ |
-| `DELETE` | `/api/chat/:chatId` | Delete a chat | ✅ |
+| Method   | Endpoint                     | Description                 | Auth |
+| -------- | ---------------------------- | --------------------------- | ---- |
+| `GET`    | `/api/chat`                  | Get all user chats          | ✅   |
+| `POST`   | `/api/chat/access`           | Create or access a 1:1 chat | ✅   |
+| `POST`   | `/api/chat/create-group`     | Create a group chat         | ✅   |
+| `PUT`    | `/api/chat/:chatId/add-user` | Add user to group           | ✅   |
+| `DELETE` | `/api/chat/:chatId`          | Delete a chat               | ✅   |
 
 ### 📨 Messages
 
-| Method | Endpoint | Description | Auth |
-|---|---|---|---|
-| `GET` | `/api/messages/:chatId` | Get messages for a chat | ✅ |
-| `POST` | `/api/messages` | Send a message (with attachments) | ✅ |
-| `PUT` | `/api/messages/:messageId` | Update a message | ✅ |
-| `DELETE` | `/api/messages/:messageId` | Delete a message | ✅ |
+| Method   | Endpoint                   | Description                       | Auth |
+| -------- | -------------------------- | --------------------------------- | ---- |
+| `GET`    | `/api/messages/:chatId`    | Get messages for a chat           | ✅   |
+| `POST`   | `/api/messages`            | Send a message (with attachments) | ✅   |
+| `PUT`    | `/api/messages/:messageId` | Update a message                  | ✅   |
+| `DELETE` | `/api/messages/:messageId` | Delete a message                  | ✅   |
 
 ### 📹 Meetings
 
-| Method | Endpoint | Description | Auth |
-|---|---|---|---|
-| `POST` | `/api/meeting` | Create a new meeting | ✅ |
-| `GET` | `/api/meeting/my` | Get user's meeting history | ✅ |
-| `GET` | `/api/meeting/:meetingId` | Validate an active meeting | ✅ |
-| `GET` | `/api/meeting/:meetingId/detail` | Get full meeting details | ✅ |
-| `POST` | `/api/meeting/:meetingId/join` | Join a meeting | ✅ |
-| `POST` | `/api/meeting/:meetingId/end` | End a meeting | ✅ |
-| `POST` | `/api/meeting/:meetingId/transcript` | Save meeting transcript | ✅ |
-| `POST` | `/api/meeting/:meetingId/summary` | Save meeting summary | ✅ |
-| `POST` | `/api/meeting/:meetingId/summarize` | AI-generate meeting summary | ✅ |
-| `POST` | `/api/meeting/:meetingId/transcribe` | Transcribe meeting audio | ✅ |
-| `POST` | `/api/meeting/:meetingId/generate-pdf` | Generate meeting report PDF | ✅ |
-| `POST` | `/api/meeting/:meetingId/generate-transcript-pdf` | Generate transcript PDF | ✅ |
-| `POST` | `/api/meeting/:meetingId/audio` | Upload meeting audio recording | ✅ |
-| `POST` | `/api/meeting/:meetingId/ai` | Get AI response for meeting context | ✅ |
+| Method | Endpoint                                          | Description                         | Auth |
+| ------ | ------------------------------------------------- | ----------------------------------- | ---- |
+| `POST` | `/api/meeting`                                    | Create a new meeting                | ✅   |
+| `GET`  | `/api/meeting/my`                                 | Get user's meeting history          | ✅   |
+| `GET`  | `/api/meeting/:meetingId`                         | Validate an active meeting          | ✅   |
+| `GET`  | `/api/meeting/:meetingId/detail`                  | Get full meeting details            | ✅   |
+| `POST` | `/api/meeting/:meetingId/join`                    | Join a meeting                      | ✅   |
+| `POST` | `/api/meeting/:meetingId/end`                     | End a meeting                       | ✅   |
+| `POST` | `/api/meeting/:meetingId/transcript`              | Save meeting transcript             | ✅   |
+| `POST` | `/api/meeting/:meetingId/summary`                 | Save meeting summary                | ✅   |
+| `POST` | `/api/meeting/:meetingId/summarize`               | AI-generate meeting summary         | ✅   |
+| `POST` | `/api/meeting/:meetingId/transcribe`              | Transcribe meeting audio            | ✅   |
+| `POST` | `/api/meeting/:meetingId/generate-pdf`            | Generate meeting report PDF         | ✅   |
+| `POST` | `/api/meeting/:meetingId/generate-transcript-pdf` | Generate transcript PDF             | ✅   |
+| `POST` | `/api/meeting/:meetingId/audio`                   | Upload meeting audio recording      | ✅   |
+| `POST` | `/api/meeting/:meetingId/ai`                      | Get AI response for meeting context | ✅   |
 
 ### 🤖 AI Chat
 
-| Method | Endpoint | Description | Auth |
-|---|---|---|---|
-| `POST` | `/api/ai/chat` | Chat with AI (SSE streaming) | ✅ |
-| `GET` | `/api/ai/history` | Get AI chat history | ✅ |
-| `POST` | `/api/ai/summarize/:chatId` | Summarize a chat conversation | ✅ |
+| Method | Endpoint                    | Description                   | Auth |
+| ------ | --------------------------- | ----------------------------- | ---- |
+| `POST` | `/api/ai/chat`              | Chat with AI (SSE streaming)  | ✅   |
+| `GET`  | `/api/ai/history`           | Get AI chat history           | ✅   |
+| `POST` | `/api/ai/summarize/:chatId` | Summarize a chat conversation | ✅   |
 
 ### 👤 Users & Friends
 
-| Method | Endpoint | Description | Auth |
-|---|---|---|---|
-| `GET` | `/api/user/search` | Search users | ✅ |
-| `GET` | `/api/user/profile` | Get user profile | ✅ |
-| `POST` | `/api/friend-request/send` | Send friend request | ✅ |
-| `POST` | `/api/friend-request/respond` | Accept/reject request | ✅ |
+| Method | Endpoint                      | Description           | Auth |
+| ------ | ----------------------------- | --------------------- | ---- |
+| `GET`  | `/api/user/search`            | Search users          | ✅   |
+| `GET`  | `/api/user/profile`           | Get user profile      | ✅   |
+| `POST` | `/api/friend-request/send`    | Send friend request   | ✅   |
+| `POST` | `/api/friend-request/respond` | Accept/reject request | ✅   |
 
 ### 🧠 AI Services (Python)
 
-| Method | Endpoint | Description |
-|---|---|---|
-| `GET` | `/` | Health check |
-| `POST` | `/api/transcribe` | Transcribe audio with speaker diarization |
-| `POST` | `/api/translate` | Translate audio to text |
-| `POST` | `/api/chat` | Chat with local Ollama model |
-| `POST` | `/api/call-summary` | Generate call summary & action items |
-| `POST` | `/api/intent` | Extract intents from conversation |
-| `WS` | `/api/transcribe-stream` | Real-time streaming transcription |
+| Method | Endpoint                 | Description                               |
+| ------ | ------------------------ | ----------------------------------------- |
+| `GET`  | `/`                      | Health check                              |
+| `POST` | `/api/transcribe`        | Transcribe audio with speaker diarization |
+| `POST` | `/api/translate`         | Translate audio to text                   |
+| `POST` | `/api/chat`              | Chat with local Ollama model              |
+| `POST` | `/api/call-summary`      | Generate call summary & action items      |
+| `POST` | `/api/intent`            | Extract intents from conversation         |
+| `WS`   | `/api/transcribe-stream` | Real-time streaming transcription         |
 
 ---
 
@@ -604,36 +612,36 @@ erDiagram
 
 ### Client → Server
 
-| Event | Payload | Description |
-|---|---|---|
-| `joinChat` | `chatId` | Join a chat room |
-| `startTyping` | `chatId` | Broadcast typing indicator |
-| `stopTyping` | `chatId` | Clear typing indicator |
-| `call:offer` | `{ to, offer }` | Send WebRTC offer |
-| `call:answer` | `{ to, answer }` | Send WebRTC answer |
-| `call:ice-candidate` | `{ to, candidate }` | Exchange ICE candidates |
-| `call:reject` | `{ to }` | Reject incoming call |
-| `meeting:join` | `{ meetingId }` | Join a meeting room |
-| `meeting:leave` | `{ meetingId }` | Leave a meeting room |
-| `meeting:offer` | `{ meetingId, to, offer }` | Meeting WebRTC offer |
-| `meeting:answer` | `{ meetingId, to, answer }` | Meeting WebRTC answer |
-| `meeting:ice-candidate` | `{ meetingId, to, candidate }` | Meeting ICE exchange |
-| `meeting:chat-message` | `{ meetingId, text }` | Send in-meeting chat |
-| `meeting:reaction` | `{ meetingId, emoji }` | Send emoji reaction |
+| Event                   | Payload                        | Description                |
+| ----------------------- | ------------------------------ | -------------------------- |
+| `joinChat`              | `chatId`                       | Join a chat room           |
+| `startTyping`           | `chatId`                       | Broadcast typing indicator |
+| `stopTyping`            | `chatId`                       | Clear typing indicator     |
+| `call:offer`            | `{ to, offer }`                | Send WebRTC offer          |
+| `call:answer`           | `{ to, answer }`               | Send WebRTC answer         |
+| `call:ice-candidate`    | `{ to, candidate }`            | Exchange ICE candidates    |
+| `call:reject`           | `{ to }`                       | Reject incoming call       |
+| `meeting:join`          | `{ meetingId }`                | Join a meeting room        |
+| `meeting:leave`         | `{ meetingId }`                | Leave a meeting room       |
+| `meeting:offer`         | `{ meetingId, to, offer }`     | Meeting WebRTC offer       |
+| `meeting:answer`        | `{ meetingId, to, answer }`    | Meeting WebRTC answer      |
+| `meeting:ice-candidate` | `{ meetingId, to, candidate }` | Meeting ICE exchange       |
+| `meeting:chat-message`  | `{ meetingId, text }`          | Send in-meeting chat       |
+| `meeting:reaction`      | `{ meetingId, emoji }`         | Send emoji reaction        |
 
 ### Server → Client
 
-| Event | Payload | Description |
-|---|---|---|
-| `messageReceived` | `message` | New message in chat |
-| `typing` | `chatId` | User started typing |
-| `stopTyping` | `chatId` | User stopped typing |
-| `call:incoming` | `{ from, offer, meetingId }` | Incoming call notification |
-| `meeting:user-joined` | `{ userId, meetingId }` | Participant joined |
-| `meeting:user-left` | `{ userId }` | Participant left |
-| `meeting:chat-message` | `{ sender, text, timestamp }` | In-meeting chat received |
-| `meeting:reaction` | `{ userId, emoji }` | Emoji reaction received |
-| `meeting:ended` | `{ meetingId }` | Meeting has ended |
+| Event                  | Payload                       | Description                |
+| ---------------------- | ----------------------------- | -------------------------- |
+| `messageReceived`      | `message`                     | New message in chat        |
+| `typing`               | `chatId`                      | User started typing        |
+| `stopTyping`           | `chatId`                      | User stopped typing        |
+| `call:incoming`        | `{ from, offer, meetingId }`  | Incoming call notification |
+| `meeting:user-joined`  | `{ userId, meetingId }`       | Participant joined         |
+| `meeting:user-left`    | `{ userId }`                  | Participant left           |
+| `meeting:chat-message` | `{ sender, text, timestamp }` | In-meeting chat received   |
+| `meeting:reaction`     | `{ userId, emoji }`           | Emoji reaction received    |
+| `meeting:ended`        | `{ meetingId }`               | Meeting has ended          |
 
 ---
 
@@ -689,39 +697,88 @@ SAMVAAD AI supports multiple AI providers with automatic failover:
 version: "3.8"
 
 services:
+  mongo:
+    image: mongo:latest
+    container_name: samvaad_mongo
+    restart: always
+    volumes:
+      - mongo_data:/data/db
+    environment:
+      - MONGO_INITDB_DATABASE=SamVaadAI
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - samvaad_network
+
   backend:
     build:
       context: ./backend
+      dockerfile: Dockerfile
+    container_name: samvaad_backend
+    restart: always
     ports:
       - "5000:5000"
     env_file:
       - ./backend/.env
+    environment:
+      - DB_URL=mongodb://mongo:27017
+      - DB_NAME=SamVaadAI
+      - AI_SERVICE_URL=http://ai-services:8000/api
+      - NODE_ENV=production
     depends_on:
-      - mongo
+      mongo:
+        condition: service_healthy
     volumes:
-      - samvaad_backend_data:/app
+      - samvaad_backend_uploads:/app/public
+    networks:
+      - samvaad_network
+
+  ai-services:
+    build:
+      context: ./ai-services
+      dockerfile: Dockerfile
+    container_name: samvaad_ai_services
+    restart: always
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./ai-services/.env
+    volumes:
+      - ai_models:/root/.cache
+      - ai_temp:/app/temp_audio
+    networks:
+      - samvaad_network
 
   client:
     build:
       context: ./client
+      dockerfile: Dockerfile
+      args:
+        - VITE_SERVER_URL=${VITE_SERVER_URL:-http://localhost:5000}
+        - VITE_SOCKET_URI=${VITE_SOCKET_URI:-http://localhost:5000}
+        - VITE_SIGNALLING_SERVER_URL=${VITE_SIGNALLING_SERVER_URL:-https://signallingserver.bytenode.xyz/}
+        - VITE_AI_SERVICE_URL=${VITE_AI_SERVICE_URL:-http://localhost:8000}
+    container_name: samvaad_client
+    restart: always
     ports:
       - "3002:80"
-    env_file:
-      - ./client/.env
     depends_on:
       - backend
+    networks:
+      - samvaad_network
 
-  mongo:
-    image: mongo:latest
-    container_name: mongod
-    volumes:
-      - mongo_data:/data/db
-    environment:
-      - MONGO_INITDB_DATABASE=SAMVAAD_AI
+networks:
+  samvaad_network:
+    driver: bridge
 
 volumes:
   mongo_data:
-  samvaad_backend_data:
+  samvaad_backend_uploads:
+  ai_models:
+  ai_temp:
 ```
 
 ### Deploy Commands
@@ -757,6 +814,7 @@ The project includes a **Jenkins pipeline** (`Jenkinsfile`) for automated deploy
 ```
 
 **Pipeline Features:**
+
 - ✅ Automatic change detection (only builds when `backend/` changes)
 - ✅ Docker image versioning with commit hashes
 - ✅ Graceful container replacement (stop → remove → deploy)
@@ -788,16 +846,16 @@ git push origin feature/amazing-feature
 
 ### Commit Convention
 
-| Prefix | Usage |
-|---|---|
-| `feat:` | New feature |
-| `fix:` | Bug fix |
-| `docs:` | Documentation changes |
-| `style:` | Formatting, no logic change |
-| `refactor:` | Code restructuring |
-| `perf:` | Performance improvement |
-| `test:` | Adding tests |
-| `chore:` | Build process / tooling |
+| Prefix      | Usage                       |
+| ----------- | --------------------------- |
+| `feat:`     | New feature                 |
+| `fix:`      | Bug fix                     |
+| `docs:`     | Documentation changes       |
+| `style:`    | Formatting, no logic change |
+| `refactor:` | Code restructuring          |
+| `perf:`     | Performance improvement     |
+| `test:`     | Adding tests                |
+| `chore:`    | Build process / tooling     |
 
 ---
 
@@ -806,6 +864,7 @@ git push origin feature/amazing-feature
 ### Recent Changes
 
 #### 🔧 Bug Fixes
+
 - **Fixed Groq Model Decommission** — Replaced deprecated `llama3-70b-8192` with `llama-3.3-70b-versatile`
 - **Fixed JSON Parsing** — Handle Groq responses wrapped in markdown code fences
 - **Fixed Video Call Blank Screen** — Resolved WebRTC peer connection race condition on receiver side
@@ -814,6 +873,7 @@ git push origin feature/amazing-feature
 - **Fixed Login Error Display** — Ensure error messages render correctly with proper navigation
 
 #### ✨ Features Added
+
 - **AI Chat with Streaming** — SSE-based real-time AI responses with context memory
 - **Meeting Summarization** — Auto-generate summaries, action items, and key topics using LLM
 - **PDF Report Generation** — Professional meeting reports with PDFKit
@@ -827,6 +887,7 @@ git push origin feature/amazing-feature
 - **Call Overlay System** — Accept calls from any page without navigating away
 
 #### 🎨 UI Improvements
+
 - **Modern Login/Register** — Glassmorphic design matching the meeting pages
 - **AI Chat Modal** — Redesigned with modern glassmorphism & dark theme
 - **Emoji Reactions** — Floating emoji animations during meetings
