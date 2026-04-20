@@ -1,0 +1,14 @@
+/node_modules
+/venv
+.env
+.env.*
+! .env.sample
+*.log
+dist/
+__pycache__/
+.DS_Store
+*.pyc
+ai-services/test_hf.py
+ai-services/diarization_error.log
+backend/dist
+client/dist

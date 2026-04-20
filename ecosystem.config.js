@@ -3,19 +3,17 @@ module.exports = {
     {
       name: 'samvaad-backend',
       cwd: './backend',
-      script: 'npm',
-      args: 'run start',
+      script: 'dist/server.js',
       env: {
         NODE_ENV: 'production',
-        PORT: 5000
+        PORT: 5001
       }
     },
     {
       name: 'samvaad-ai',
       cwd: './ai-services',
-      script: 'uvicorn',
-      args: 'app.main:app --host 0.0.0.0 --port 8000',
-      interpreter: 'python3'
+      script: './venv/bin/python3',
+      args: '-m uvicorn app.main:app --host 0.0.0.0 --port 8000'
     },
     {
       name: 'samvaad-client',

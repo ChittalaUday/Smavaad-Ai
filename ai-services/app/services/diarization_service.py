@@ -27,18 +27,25 @@ class DiarizationService:
         hf_token = os.getenv("HUGGING_FACE_TOKEN")
         if not hf_token:
             raise ValueError("Hugging Face token not found. Please set the HUGGING_FACE_TOKEN environment variable.")
+        
+        # Set HF_TOKEN environment variable as a fallback
+        os.environ["HF_TOKEN"] = hf_token
 
         try:
             # Load the pretrained model from pyannote.audio (HuggingFace Hub)
             self.pipeline = Pipeline.from_pretrained(
                 "pyannote/speaker-diarization-3.1",
-                token=hf_token
-            ).to(self.device)
-            logger.info("pyannote.audio speaker-diarization pipeline loaded successfully.")
-
+                use_auth_token=hf_token
+            )
+            if self.pipeline:
+                self.pipeline = self.pipeline.to(self.device)
+                logger.info("pyannote.audio speaker-diarization pipeline loaded successfully.")
+            else:
+                logger.error("Failed to load pyannote.audio pipeline: Pipeline.from_pretrained returned None. Please ensure you have accepted the user conditions at https://hf.co/pyannote/speaker-diarization-3.1")
         except Exception as e:
             logger.error(f"Failed to load pyannote.audio pipeline: {e}")
-            raise
+            self.pipeline = None
+
 
     def diarize(self, audio_path: str):
         """
