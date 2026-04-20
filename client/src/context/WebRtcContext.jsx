@@ -13,8 +13,11 @@ const webRtcContext = createContext(null);
 // connect to the signalling socket server
 const connectToSigServer = (userId) => {
   const token = LocalStorage.get("token");
-  return socketio(import.meta.env.VITE_SIGNALLING_SERVER_URL, {
-    secure: true,
+  const signalingUrl = import.meta.env.VITE_SIGNALLING_SERVER_URL || import.meta.env.VITE_SOCKET_URI || "/";
+  const isSecure = signalingUrl.startsWith("https") || window.location.protocol === "https:";
+  
+  return socketio(signalingUrl, {
+    secure: isSecure,
     rejectUnauthorized: false, // this will allow the use of self-signed certificates
     auth: { token },
   });
