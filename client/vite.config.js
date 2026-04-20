@@ -7,7 +7,7 @@ export default defineConfig(({ mode }) => {
   // Load env file based on `mode` in the current working directory.
   // Set the third parameter to '' to load all env regardless of the `VITE_` prefix.
   const env = loadEnv(mode, process.cwd(), '');
-  const serverUrl = env.VITE_SERVER_URL || 'http://localhost:5001';
+  const serverUrl = env.VITE_PROXY_TARGET || env.VITE_SERVER_URL || 'http://localhost:5001';
 
   return {
     plugins: [react(), basicSsl()],
@@ -29,6 +29,12 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           secure: false,
           ws: true,
+        },
+        '/ai-api': {
+          target: env.VITE_AI_SERVICE_URL || 'http://localhost:8000',
+          changeOrigin: true,
+          secure: false,
+          rewrite: (path) => path.replace(/^\/ai-api/, ''),
         },
       },
     },
