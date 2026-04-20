@@ -6,6 +6,8 @@
     "start:all": "npx pm2 start ecosystem.config.js",
     "pm2:all": "npm run start:all",
     "pm2:ai:start": "npx pm2 start ai-services/venv/bin/python3 --name samvaad-ai -- -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --cwd ai-services",
+    "pm2:ai:stop": "npx pm2 stop samvaad-ai",
+    "pm2:ai:logs": "npx pm2 logs samvaad-ai",
     "stop:all": "npx pm2 stop ecosystem.config.js",
     "restart:all": "npx pm2 restart ecosystem.config.js",
     "delete:all": "npx pm2 delete ecosystem.config.js",
