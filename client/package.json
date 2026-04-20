@@ -7,7 +7,10 @@
     "dev": "vite --host",
     "build": "vite build",
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "pm2:start": "pm2 start ecosystem.config.js --cwd ..",
+    "pm2:stop": "pm2 stop ecosystem.config.js --cwd ..",
+    "pm2:logs": "pm2 logs"
   },
   "dependencies": {
     "@headlessui/react": "^2.0.4",

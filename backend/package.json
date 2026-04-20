@@ -7,7 +7,10 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon -r tsconfig-paths/register src/server.ts",
     "build": "rimraf ./dist && tsc",
-    "start": "npm run build && node dist/server.js"
+    "start": "npm run build && node dist/server.js",
+    "pm2:start": "pm2 start ecosystem.config.js --cwd ..",
+    "pm2:stop": "pm2 stop ecosystem.config.js --cwd ..",
+    "pm2:logs": "pm2 logs"
   },
   "keywords": [
     "chat_app_backend",
