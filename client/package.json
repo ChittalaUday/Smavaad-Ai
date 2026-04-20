@@ -9,6 +9,7 @@
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "pm2:start": "npx pm2 start npm --name samvaad-client -- run dev -- --port 3002 --host",
+    "pm2:prod": "npm run build && npx pm2 serve dist 3002 --name samvaad-client --spa",
     "pm2:stop": "npx pm2 stop samvaad-client",
     "pm2:logs": "npx pm2 logs samvaad-client"
   },
