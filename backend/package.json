@@ -8,9 +8,9 @@
     "dev": "nodemon -r tsconfig-paths/register src/server.ts",
     "build": "rimraf ./dist && tsc",
     "start": "npm run build && node dist/server.js",
-    "pm2:start": "pm2 start ecosystem.config.js --cwd ..",
-    "pm2:stop": "pm2 stop ecosystem.config.js --cwd ..",
-    "pm2:logs": "pm2 logs"
+    "pm2:start": "npm run build && npx pm2 start dist/server.js --name samvaad-backend",
+    "pm2:stop": "npx pm2 stop samvaad-backend",
+    "pm2:logs": "npx pm2 logs samvaad-backend"
   },
   "keywords": [
     "chat_app_backend",
